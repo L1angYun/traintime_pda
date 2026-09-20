@@ -53,6 +53,13 @@ object CourseLiveUpdateManager {
     private const val LEAD_MINUTES_KEY = "lead_minutes"
     private const val DEFAULT_LEAD_MINUTES = 20
 
+    /// Whether the classes are put on the island at all.
+    ///
+    /// It is a setting of its own: the reminders of the app are notifications
+    /// which beep once, the island is a status which stays while the class goes
+    /// on, and someone may well want one without the other.
+    private const val ENABLED_KEY = "enabled"
+
     /// The class which is on the island right now, as JSON.
     private const val SHOWN_EVENT_KEY = "shown_event"
 
@@ -72,6 +79,18 @@ object CourseLiveUpdateManager {
             .coerceIn(0, MAX_LEAD_MINUTES)
 
     fun leadMillis(context: Context): Long = leadMinutes(context) * 60_000L
+
+    /// Whether the classes are shown on the island.
+    fun isEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .getBoolean(ENABLED_KEY, true)
+
+    fun setEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(ENABLED_KEY, enabled)
+            .apply()
+    }
 
     /// Remembers how early the island of a class should appear.
     ///
@@ -440,6 +459,7 @@ object CourseLiveUpdateManager {
             "channelImportance" to (channel?.importance ?: -1),
             "badgeStyle" to badgeStyle(context),
             "leadMinutes" to leadMinutes(context),
+            "enabled" to isEnabled(context),
         )
     }
 

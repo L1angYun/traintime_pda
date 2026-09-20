@@ -22,12 +22,6 @@ class CourseLiveUpdateDebugCard extends StatefulWidget {
       _CourseLiveUpdateDebugCardState();
 }
 
-/// 可以选的提前量(分钟),0 表示上课时才出现。
-const kLiveUpdateLeadMinuteOptions = [0, 3, 5, 10, 15, 20, 30];
-
-/// 平台侧的默认提前量。
-const kDefaultLiveUpdateLeadMinutes = 20;
-
 class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
   bool _isSupported = false;
   bool _hasNotificationPermission = false;
@@ -42,8 +36,11 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
   /// 岛上的课程徽标样式,由平台侧保存,这里只是它的镜像。
   CourseLiveUpdateBadgeStyle _badgeStyle = CourseLiveUpdateBadgeStyle.none;
 
-  /// 上课前多久上岛(分钟),同样由平台侧保存。
+  /// 上课前多久上岛(分钟),同样由平台侧保存。设置本身在「通知设置」页里。
   int _leadMinutes = kDefaultLiveUpdateLeadMinutes;
+
+  /// 岛的总开关,也在「通知设置」页里。
+  bool _isEnabled = true;
 
   @override
   void initState() {
@@ -85,6 +82,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
       _leadMinutes = kLiveUpdateLeadMinuteOptions.contains(lead)
           ? lead
           : kDefaultLiveUpdateLeadMinutes;
+      _isEnabled = diagnostics["enabled"] as bool? ?? true;
       _upcoming = supported
           ? service.collectEvents(daysToSchedule: 1)
           : const [];
@@ -171,29 +169,6 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
     } else if (mounted) {
       showToast(context: context, msg: "已按新样式重发岛上正在上的那节课");
     }
-  }
-
-  /// 改一下提前多久上岛,并且马上按新设置重排一次,不用等到下次开 App。
-  Future<void> _setLeadMinutes(int minutes) async {
-    setState(() {
-      _leadMinutes = minutes;
-      _isBusy = true;
-    });
-
-    final service = CourseLiveUpdateService.instance;
-    await service.setLeadMinutes(minutes);
-    await service.scheduleFromCourseData(daysToSchedule: 1);
-
-    if (!mounted) {
-      return;
-    }
-    setState(() => _isBusy = false);
-    showToast(
-      context: context,
-      msg: minutes == 0
-          ? "已改成上课时才上岛，并按新设置重排了未来 24 小时"
-          : "已改成上课前 $minutes 分钟上岛，并按新设置重排了未来 24 小时",
-    );
   }
 
   Future<void> _scheduleNow() async {
@@ -294,6 +269,18 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                     ? "是（岛上应该出现了）"
                     : "否（点“显示测试课程”后回到桌面，再回来刷新）",
               ),
+            if (_diagnostics.containsKey("enabled"))
+              _infoRow(
+                "岛的总开关",
+                _isEnabled ? "开（在「通知设置」页里改）" : "关（在「通知设置」页里打开）",
+              ),
+            if (_diagnostics.containsKey("leadMinutes"))
+              _infoRow(
+                "上岛提前量",
+                _leadMinutes == 0
+                    ? "上课时才出现（在「通知设置」页改）"
+                    : "上课前 $_leadMinutes 分钟（在「通知设置」页改）",
+              ),
             if (_diagnostics.containsKey("targetSdk"))
               _infoRow("目标 SDK", "API ${_diagnostics["targetSdk"]}"),
             if (_diagnostics.containsKey("channelImportance"))
@@ -315,51 +302,8 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                   "右下 ${_corners.bottomRight.toStringAsFixed(1)} dp",
             ),
 
-            /// 提前量和徽标都由平台侧的代码决定，iOS 上这两个设置没有意义。
+            /// 徽标由平台侧的代码决定，iOS 上没有这个设置。
             if (Platform.isAndroid) ...[
-              const Divider(height: 20),
-
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      "上课前多久上岛",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  DropdownButton<int>(
-                    value: _leadMinutes,
-                    items: [
-                      for (final minutes in kLiveUpdateLeadMinuteOptions)
-                        DropdownMenuItem(
-                          value: minutes,
-                          child: Text(minutes == 0 ? "上课时" : "$minutes 分钟"),
-                        ),
-                    ],
-                    onChanged: _isBusy
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              _setLeadMinutes(value);
-                            }
-                          },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _leadMinutes == 0
-                    ? "上课那一刻才出现，不做提前提醒"
-                    : "上课前 $_leadMinutes 分钟出现，通知里的倒计时指向上课时间",
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-
               const Divider(height: 20),
 
               const Text(
@@ -381,7 +325,8 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
               ),
               const SizedBox(height: 4),
               Text(
-                "只影响展开的通知，折叠的小胶囊里始终写课程简称。",
+                "只影响展开的通知，折叠的小胶囊里始终写课程简称。"
+                "开关和提前多久上岛在「通知设置」页里。",
                 style: TextStyle(
                   fontSize: 11,
                   color: theme.colorScheme.onSurfaceVariant,

@@ -110,6 +110,12 @@ class CourseLiveUpdateEvent {
   };
 }
 
+/// 岛上「提前多久出现」可以选的值（分钟），0 表示上课时才出现。
+const kLiveUpdateLeadMinuteOptions = [0, 3, 5, 10, 15, 20, 30];
+
+/// 平台侧的默认提前量：从宿舍走到教室差不多要这么久。
+const kDefaultLiveUpdateLeadMinutes = 20;
+
 /// 岛上的课程徽标样式。
 ///
 /// The order is the one of the platform side, so do not shuffle it.
@@ -257,6 +263,32 @@ class CourseLiveUpdateService {
     } catch (e) {
       log.warning("[CourseLiveUpdate] Unable to set the lead time: $e");
     }
+  }
+
+  /// 上课时是否把课放到岛上。
+  ///
+  /// 它和「课前提醒」是两件事:提醒是响一下就走的通知,岛是上课期间一直挂着的状态,
+  /// 所以两边各有自己的开关。关掉时把岛上那条也收走。
+  Future<void> setEnabled(bool enabled) async {
+    if (!Platform.isAndroid || !await isSupported()) {
+      return;
+    }
+
+    try {
+      await _androidChannel.invokeMethod("setEnabled", {"enabled": enabled});
+    } catch (e) {
+      log.warning("[CourseLiveUpdate] Unable to set the switch: $e");
+    }
+  }
+
+  /// 岛是否开着(默认开着)。只有 Android 有这个概念。
+  Future<bool> isEnabled() async {
+    if (!Platform.isAndroid || !await isSupported()) {
+      return false;
+    }
+
+    final values = await diagnostics();
+    return values["enabled"] as bool? ?? true;
   }
 
   /// Shows a class right away, for trying the island out without waiting for

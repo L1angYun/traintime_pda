@@ -45,6 +45,13 @@ object CourseLiveUpdateScheduler {
     fun schedule(context: Context, events: List<CourseLiveUpdateEvent>): Int {
         cancelAll(context)
 
+        // The island has a switch of its own: when it is off, nothing is planned
+        // and whatever is on it goes away.
+        if (!CourseLiveUpdateManager.isEnabled(context)) {
+            log("the island is turned off")
+            return 0
+        }
+
         val now = System.currentTimeMillis()
         val lead = CourseLiveUpdateManager.leadMillis(context)
         val planned = events

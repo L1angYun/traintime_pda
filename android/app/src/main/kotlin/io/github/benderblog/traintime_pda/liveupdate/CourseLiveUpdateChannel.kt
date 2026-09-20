@@ -57,6 +57,15 @@ object CourseLiveUpdateChannel {
                         result.success(null)
                     }
 
+                    "setEnabled" -> {
+                        val enabled = call.argument<Any?>("enabled") as? Boolean ?: true
+                        CourseLiveUpdateManager.setEnabled(context, enabled)
+                        if (!enabled) {
+                            CourseLiveUpdateScheduler.cancelAll(context)
+                        }
+                        result.success(null)
+                    }
+
                     "openNotificationSettings" -> {
                         CourseLiveUpdateManager.openNotificationSettings(context)
                         result.success(null)

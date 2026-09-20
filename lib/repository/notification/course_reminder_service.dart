@@ -844,9 +844,7 @@ class CourseReminderService extends NotificationService
       /// The class which is going on is published as a Live Update (Android)
       /// or a Live Activity (iOS) as well, so that it shows up in the island
       /// of the device while it lasts.
-      await CourseLiveUpdateService.instance.scheduleFromCourseData(
-        daysToSchedule: daysToSchedule,
-      );
+      await _scheduleLiveUpdate(daysToSchedule);
     } catch (e, stackTrace) {
       log.error(
         '[CourseReminderService] [scheduleNotificationsFromCourseData] Failed to schedule notifications from course data',
@@ -856,21 +854,22 @@ class CourseReminderService extends NotificationService
     }
   }
 
+  /// 把接下来的课放到岛上（实时更新 / 灵动岛）。
+  ///
+  /// 它有自己的开关（通知设置里的「上课时显示在岛上」），关着的时候原生那边
+  /// 什么都不会排，所以这里不用再判断一次。
+  Future<void> _scheduleLiveUpdate(int daysToSchedule) async {
+    await CourseLiveUpdateService.instance.scheduleFromCourseData(
+      daysToSchedule: daysToSchedule,
+    );
+  }
+
   /// Validate and update the scheduled notification
   Future<void> validateAndUpdateNotifications() async {
     log.info(
       '[CourseReminderService] [validateAndUpdateNotifications] Validating scheduled notifications...',
     );
     try {
-      // Check if notifications are enabled first
-      if (!isEnabled) {
-        log.info(
-          '[CourseReminderService] [validateAndUpdateNotifications] Notifications not enabled, skipping validation',
-        );
-        await cancelAllCourseNotifications();
-        return;
-      }
-
       if (!hasSchedulableReminderSourceData) {
         log.warning(
           '[CourseReminderService] [validateAndUpdateNotifications] No schedulable reminder source data available, cannot validate notifications',
@@ -882,6 +881,20 @@ class CourseReminderService extends NotificationService
       final config = await _loadScheduleConfig();
       final int daysToSchedule = config?['daysToSchedule'] ?? 7;
       final int minutesBefore = config?['minutesBefore'] ?? 5;
+
+      /// The island of the ongoing class is not a reminder: it is a status which
+      /// stays while the class goes on, so it follows its own switch and is put
+      /// in place whether the reminders are on or not.
+      await _scheduleLiveUpdate(daysToSchedule);
+
+      // Check if notifications are enabled first
+      if (!isEnabled) {
+        log.info(
+          '[CourseReminderService] [validateAndUpdateNotifications] Notifications not enabled, skipping validation',
+        );
+        await cancelAllCourseNotifications();
+        return;
+      }
 
       // Check if locale has changed
       final currentLocale = getCurrentLocale();
@@ -936,8 +949,6 @@ class CourseReminderService extends NotificationService
       log.info(
         'Cancelled ${courseNotifications.length} course reminder notifications (includes experiments)',
       );
-
-      await CourseLiveUpdateService.instance.cancelAll();
     } catch (e, stackTrace) {
       log.error('Failed to cancel course notifications', e, stackTrace);
       rethrow;
