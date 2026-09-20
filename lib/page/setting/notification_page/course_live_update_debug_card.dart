@@ -11,6 +11,7 @@ import 'package:watermeter/page/public_widget/toast.dart';
 import 'package:watermeter/repository/display_corner.dart';
 import 'package:watermeter/repository/notification/course_live_update_service.dart';
 import 'package:watermeter/repository/notification/course_reminder_service.dart';
+import 'package:watermeter/repository/preference.dart' as preference;
 
 /// 超级岛 / 灵动岛调试组件
 class CourseLiveUpdateDebugCard extends StatefulWidget {
@@ -31,6 +32,11 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
 
   List<CourseLiveUpdateEvent> _upcoming = [];
   Map<String, dynamic> _diagnostics = const {};
+
+  /// 0 = 首字, 1 = 简称, 2 = 不显示徽标
+  int _badgeStyle = preference.getInt(
+    preference.Preference.liveUpdateBadgeStyle,
+  );
 
   @override
   void initState() {
@@ -131,6 +137,15 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
     await CourseLiveUpdateService.instance.stopPreview();
     if (mounted) {
       showToast(context: context, msg: "已结束测试课程");
+    }
+  }
+
+  /// 换一种课程徽标,立刻用新样式重发一次,方便直接对比。
+  Future<void> _setBadgeStyle(int value) async {
+    setState(() => _badgeStyle = value);
+    await preference.setInt(preference.Preference.liveUpdateBadgeStyle, value);
+    if (mounted) {
+      await _showPreview(realTime: true);
     }
   }
 
@@ -254,6 +269,26 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
             ),
 
             const Divider(height: 20),
+
+            const Text(
+              "岛上的课程徽标",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 0, label: Text("首字")),
+                  ButtonSegment(value: 1, label: Text("简称")),
+                  ButtonSegment(value: 2, label: Text("不显示")),
+                ],
+                selected: {_badgeStyle},
+                showSelectedIcon: false,
+                onSelectionChanged: (values) => _setBadgeStyle(values.first),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             Row(
               children: [

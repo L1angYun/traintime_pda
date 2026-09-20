@@ -59,6 +59,10 @@ enum Preference {
     key: "classTableBackgroundBlur",
     type: "double",
   ), // 课表背景图的模糊程度
+  liveUpdateBadgeStyle(
+    key: "liveUpdateBadgeStyle",
+    type: "int",
+  ), // 实时更新/灵动岛上的课程徽标样式(调试页选择)
   swift(key: "swift", type: "int"), // 周次偏移
   color(key: "color", type: "int"), // 颜色索引
   brightness(key: "brightness", type: "int"), // 深浅色模式
