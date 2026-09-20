@@ -183,9 +183,13 @@ object CourseLiveUpdateManager {
     }
 
     /// Which badge the card shows, one of the `BADGE_STYLE_` values.
+    ///
+    /// The card is left without a badge by default: the title of the class is
+    /// already there, and one more mark of the same class next to it only makes
+    /// the notification look busy.
     private fun badgeStyle(context: Context): Int =
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .getInt(BADGE_STYLE_KEY, BADGE_STYLE_INITIAL)
+            .getInt(BADGE_STYLE_KEY, BADGE_STYLE_NONE)
 
     /// The mark of the course: a circle (or a rounded square) in the colour of
     /// its card with the beginning of its name.

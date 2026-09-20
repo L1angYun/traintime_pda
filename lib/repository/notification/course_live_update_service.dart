@@ -113,7 +113,8 @@ enum CourseLiveUpdateBadgeStyle {
   /// 方形圆角，配首字。
   square("方形"),
 
-  /// 不要徽标，只留标题。
+  /// 不要徽标，只留标题。默认用这个，标题里已经有课程名，再放一个同样的
+  /// 标记只会让通知显得杂乱。
   none("不显示");
 
   const CourseLiveUpdateBadgeStyle(this.label);
@@ -121,8 +122,8 @@ enum CourseLiveUpdateBadgeStyle {
   final String label;
 
   static CourseLiveUpdateBadgeStyle fromIndex(Object? index) {
-    final value = index is int ? index : 0;
-    return value >= 0 && value < values.length ? values[value] : initial;
+    final value = index is int ? index : none.index;
+    return value >= 0 && value < values.length ? values[value] : none;
   }
 }
 

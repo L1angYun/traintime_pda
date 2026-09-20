@@ -26,6 +26,26 @@ const changePageTime = 200;
 /// The height of the middle row.
 const midRowHeight = 54.0;
 
+/// The shortest one of the 61 blocks of a day may get.
+///
+/// A day is drawn with 61 blocks, of which a phone shows 48 at once, so a
+/// block measures `(height - midRowHeight) / 48`. In a short window — a
+/// floating window, a split screen, the landscape orientation — that would
+/// squeeze a class into a couple of pixels and the text of its card would be
+/// cut off, so the blocks keep this height and the table simply scrolls
+/// further instead.
+const double minBlockUnitHeight = 9.0;
+
+/// The width below which a class card switches to smaller text.
+///
+/// Seven days have to fit next to the index row, which leaves narrow cards on
+/// a phone sized window; with the regular sizes the name of a class would be
+/// broken into one or two characters per line.
+const double narrowClassCardWidth = 46.0;
+
+/// The width below which a class card uses the smallest text it has.
+const double tinyClassCardWidth = 32.0;
+
 /// The gap kept between the classtable sheet and the edges of the display.
 ///
 /// The sheet gets the window insets of the system bars as well, this is only

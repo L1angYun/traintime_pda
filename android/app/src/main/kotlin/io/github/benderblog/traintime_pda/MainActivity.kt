@@ -40,6 +40,11 @@ class MainActivity : FlutterActivity() {
     }
 
     /// Radii of the four corners of the display, in logical pixels.
+    ///
+    /// A window which does not cover the whole screen — a floating window, a
+    /// split screen — does not reach the corners of the display, so nothing
+    /// there can cover the content of the app. Reporting the corners anyway
+    /// would only take the little room such a window has.
     private fun roundedCornerRadii(): Map<String, Double> {
         val corners = mutableMapOf(
             "topLeft" to 0.0,
@@ -47,7 +52,7 @@ class MainActivity : FlutterActivity() {
             "bottomLeft" to 0.0,
             "bottomRight" to 0.0,
         )
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || isInMultiWindowMode) {
             return corners
         }
 

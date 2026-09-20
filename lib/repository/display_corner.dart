@@ -85,6 +85,22 @@ class DisplayCorner {
     return _radii;
   }
 
+  /// Asks the platform again, for a window which has just been resized.
+  ///
+  /// The corners of the display stop mattering as soon as the window no longer
+  /// covers it: an app in a floating window or in a split screen has nothing to
+  /// clear there, and the room the corners would take is all it has. The answer
+  /// therefore has to follow the window.
+  static Future<DisplayCornerRadii> refresh() async {
+    if (!Platform.isAndroid) {
+      return _radii;
+    }
+
+    _loaded = true;
+    await _query();
+    return _radii;
+  }
+
   static Future<void> _query() async {
     try {
       final result = await _channel.invokeMapMethod<String, num>(

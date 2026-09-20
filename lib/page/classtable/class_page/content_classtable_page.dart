@@ -37,7 +37,8 @@ class ContentClassTablePage extends StatefulWidget {
   State<StatefulWidget> createState() => _ContentClassTablePageState();
 }
 
-class _ContentClassTablePageState extends State<ContentClassTablePage> {
+class _ContentClassTablePageState extends State<ContentClassTablePage>
+    with WidgetsBindingObserver {
   /// Check whether listener is pushed...
   //bool isPushedListener = false;
 
@@ -58,11 +59,24 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     /// The corners of the display are not part of the window insets, they have
     /// to be queried from the platform. The sheet is laid out again once they
     /// are known.
-    DisplayCorner.load().then((_) {
+    _loadDisplayCorner();
+  }
+
+  /// The window just changed size, which is also what happens when the app goes
+  /// into a floating window or into a split screen. The corners of the display
+  /// no longer cover anything there, so the sheet has to be measured again.
+  @override
+  void didChangeMetrics() {
+    _loadDisplayCorner();
+  }
+
+  void _loadDisplayCorner() {
+    DisplayCorner.refresh().then((_) {
       if (mounted) {
         setState(() {});
       }
@@ -94,6 +108,7 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     classTableState.removeListener(_switchPage);
     super.dispose();
   }

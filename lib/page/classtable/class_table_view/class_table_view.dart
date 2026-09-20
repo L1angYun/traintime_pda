@@ -2,6 +2,8 @@
 // Copyright 2025 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -93,11 +95,18 @@ class _ClassTableViewState extends State<ClassTableView> {
     blockHeight: blockheight,
   );
 
+  /// The height of one of the 61 blocks of a day.
+  ///
+  /// It never falls below [minBlockUnitHeight]: in a window which is much
+  /// shorter than the display of a phone the blocks would otherwise be squeezed
+  /// until the cards of the classes lose their text.
+  double get _blockUnit => math.max(
+    (widget.constraint.minHeight - midRowHeight) / (isPhone(context) ? 48 : 61),
+    minBlockUnitHeight,
+  );
+
   /// The height of the class card.
-  double blockheight(double count) =>
-      count *
-      (widget.constraint.minHeight - midRowHeight) /
-      (isPhone(context) ? 48 : 61);
+  double blockheight(double count) => count * _blockUnit;
 
   double get blockwidth => (size.maxWidth - leftRow) / 7;
 

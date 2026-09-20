@@ -33,7 +33,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
   Map<String, dynamic> _diagnostics = const {};
 
   /// 岛上的课程徽标样式,由平台侧保存,这里只是它的镜像。
-  CourseLiveUpdateBadgeStyle _badgeStyle = CourseLiveUpdateBadgeStyle.initial;
+  CourseLiveUpdateBadgeStyle _badgeStyle = CourseLiveUpdateBadgeStyle.none;
 
   @override
   void initState() {
