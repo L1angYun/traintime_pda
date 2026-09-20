@@ -264,6 +264,12 @@ object CourseLiveUpdateManager {
             // This is the bit which asks the system to promote the notification
             // into a Live Update.
             .setRequestPromotedOngoing(true)
+            // The colour of the course, the same one its card has in the
+            // classtable. The system draws the small icon inside a circle of this
+            // colour, and the bar of the periods is drawn in it: left to itself
+            // the circle takes the colour of the app and the island ends up blue
+            // on one side and purple on the other.
+            .setColor(event.color)
             // Note: setColorized(true) must *not* be used, a colorized
             // notification is not eligible for promotion.
 
