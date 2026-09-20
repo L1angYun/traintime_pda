@@ -250,6 +250,12 @@ object CourseLiveUpdateManager {
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setStyle(style)
+            // The countdown of the system runs past its target once the lesson
+            // is over: without this the island would sit there counting "-00:06"
+            // until the alarm which takes it off fires, and that alarm is only
+            // exact when the app is allowed to set exact alarms. The system takes
+            // the notification off itself at the end of the lesson instead.
+            .setTimeoutAfter((event.endMillis - now).coerceAtLeast(1L))
             // What the collapsed island and the status bar chip show. Only a
             // couple of characters fit there, so it is the short form of the
             // name: a single character says nothing about which class it is, and

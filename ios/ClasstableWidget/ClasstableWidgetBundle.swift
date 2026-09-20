@@ -138,6 +138,10 @@ private struct CourseActivityBadge: View {
 /// The countdown shown inside the island: it runs towards the beginning of the
 /// class, and towards its end once the class has started. The system keeps it
 /// up to date on its own.
+///
+/// Once the class is over there is nothing left to count towards - the widget
+/// would otherwise keep counting past the end - so a tick takes its place, and
+/// the activity itself goes stale at the same moment.
 @available(iOSApplicationExtension 16.2, *)
 private struct CourseActivityCountdown: View {
     let state: CourseActivityAttributes.ContentState
@@ -145,8 +149,10 @@ private struct CourseActivityCountdown: View {
     var body: some View {
         if Date() < state.startDate {
             Text(timerInterval: Date()...state.startDate, countsDown: true)
-        } else {
+        } else if Date() < state.endDate {
             Text(timerInterval: Date()...state.endDate, countsDown: true)
+        } else {
+            Image(systemName: "checkmark")
         }
     }
 }
