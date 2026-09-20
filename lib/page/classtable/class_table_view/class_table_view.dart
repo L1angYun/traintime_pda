@@ -276,6 +276,8 @@ class _ClassTableViewState extends State<ClassTableView> {
           .toStack()
           .constrained(height: blockheight(61), width: size.maxWidth)
           .scrollable(
+            /// The safe area of the screen is handled by the page which hosts
+            /// the table, the sheet itself only has to be scrollable here.
             physics: widget.enableVerticalScrolling
                 ? null
                 : const NeverScrollableScrollPhysics(),

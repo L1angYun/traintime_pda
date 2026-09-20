@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // This file is auto-generated from non_ui_i18n YAML files
-// Generated at: 2026-08-04T23:24:05.772432
+// Generated at: 2026-09-20T00:46:07.953893
 
 /// Static i18n class for non-UI translations
 /// Supports multiple locales without BuildContext
@@ -19,6 +19,12 @@ class NonUII18n {
         "location": "Location: {location}",
         "teacher": "Teacher: {teacher}",
       },
+      "course_live_update": {
+        "period": "Period {start}-{stop}",
+        "period_single": "Period {start}",
+        "next_class": "Next {time} · {location}",
+        "no_location": "No classroom",
+      },
     },
     "zh_CN": {
       "course_reminder": {
@@ -27,6 +33,12 @@ class NonUII18n {
         "location": "地点：{location}",
         "teacher": "教师：{teacher}",
       },
+      "course_live_update": {
+        "period": "第 {start}-{stop} 节",
+        "period_single": "第 {start} 节",
+        "next_class": "下一节 {time} · {location}",
+        "no_location": "未知教室",
+      },
     },
     "zh_TW": {
       "course_reminder": {
@@ -34,6 +46,12 @@ class NonUII18n {
         "body": "{time} 分鐘後開始上課",
         "location": "地點：{location}",
         "teacher": "教師：{teacher}",
+      },
+      "course_live_update": {
+        "period": "第 {start}-{stop} 節",
+        "period_single": "第 {start} 節",
+        "next_class": "下一節 {time} · {location}",
+        "no_location": "未知教室",
       },
     },
   };

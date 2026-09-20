@@ -18,6 +18,7 @@ import 'package:watermeter/model/xidian_ids/classtable.dart';
 import 'package:watermeter/model/xidian_ids/exam.dart';
 import 'package:watermeter/model/xidian_ids/experiment.dart';
 import 'package:watermeter/repository/logger.dart';
+import 'package:watermeter/repository/notification/course_live_update_service.dart';
 import 'package:watermeter/repository/notification/notification_service.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
 import 'package:watermeter/routing/routes.dart';
@@ -301,7 +302,7 @@ class CourseReminderService extends NotificationService
     );
   }
 
-  String _getCurrentLocale() {
+  String getCurrentLocale() {
     // Get current locale from preference
     String locale = preference.getString(preference.Preference.localization);
     // If localization is not set or empty, get system locale
@@ -376,7 +377,7 @@ class CourseReminderService extends NotificationService
         return;
       }
 
-      final String locale = _getCurrentLocale();
+      final String locale = getCurrentLocale();
       int scheduledCount = 0;
 
       for (final customClass in data) {
@@ -527,7 +528,7 @@ class CourseReminderService extends NotificationService
             '${classStartTime.toIso8601String()}|$minutesBefore|$weekIndex',
           );
 
-          String locale = _getCurrentLocale();
+          String locale = getCurrentLocale();
 
           String title = NonUII18n.translate(
             locale,
@@ -662,7 +663,7 @@ class CourseReminderService extends NotificationService
             '$minutesBefore|$weekIndex',
           );
 
-          String locale = _getCurrentLocale();
+          String locale = getCurrentLocale();
 
           // Use course_reminder translation keys to treat experiments as courses
           String title = NonUII18n.translate(
@@ -764,12 +765,12 @@ class CourseReminderService extends NotificationService
           'exam|${exam.subject}|${exam.typeStr}|${exam.place}|'
           '${examStartTime.toIso8601String()}|$minutesBefore|$weekIndex',
         );
-        final locale = _getCurrentLocale();
+        final locale = getCurrentLocale();
 
         String title = NonUII18n.translate(
           locale,
           'course_reminder.title',
-          translateParams: {'name': '${exam.subject}考试'},
+          translateParams: {'name': '${exam.subject}鑰冭瘯'},
         );
 
         String body = NonUII18n.translate(
@@ -839,6 +840,13 @@ class CourseReminderService extends NotificationService
           minutesBefore: minutesBefore,
         ),
       ]);
+
+      /// The class which is going on is published as a Live Update (Android)
+      /// or a Live Activity (iOS) as well, so that it shows up in the island
+      /// of the device while it lasts.
+      await CourseLiveUpdateService.instance.scheduleFromCourseData(
+        daysToSchedule: daysToSchedule,
+      );
     } catch (e, stackTrace) {
       log.error(
         '[CourseReminderService] [scheduleNotificationsFromCourseData] Failed to schedule notifications from course data',
@@ -876,7 +884,7 @@ class CourseReminderService extends NotificationService
       final int minutesBefore = config?['minutesBefore'] ?? 5;
 
       // Check if locale has changed
-      final currentLocale = _getCurrentLocale();
+      final currentLocale = getCurrentLocale();
       final lastLocale = config?['lastLocale'] as String?;
 
       if (lastLocale != null && lastLocale != currentLocale) {
@@ -928,6 +936,8 @@ class CourseReminderService extends NotificationService
       log.info(
         'Cancelled ${courseNotifications.length} course reminder notifications (includes experiments)',
       );
+
+      await CourseLiveUpdateService.instance.cancelAll();
     } catch (e, stackTrace) {
       log.error('Failed to cancel course notifications', e, stackTrace);
       rethrow;
@@ -948,7 +958,7 @@ class CourseReminderService extends NotificationService
       minutesBefore,
     );
 
-    String currentLocale = _getCurrentLocale();
+    String currentLocale = getCurrentLocale();
     await _setLastLocale(currentLocale);
   }
 

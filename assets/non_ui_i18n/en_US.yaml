@@ -3,3 +3,9 @@ course_reminder:
   body: "Class starts in {time} minutes"
   location: "Location: {location}"
   teacher: "Teacher: {teacher}"
+
+course_live_update:
+  period: "Period {start}-{stop}"
+  period_single: "Period {start}"
+  next_class: "Next {time} · {location}"
+  no_location: "No classroom"
