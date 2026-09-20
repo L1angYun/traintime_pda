@@ -381,9 +381,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
               ),
               const SizedBox(height: 4),
               Text(
-                _badgeStyle == CourseLiveUpdateBadgeStyle.none
-                    ? "展开的通知不画徽标；折叠的小胶囊里写完整的课程简称。"
-                    : "展开的通知右侧画徽标，折叠的小胶囊里写同样的字。",
+                "只影响展开的通知，折叠的小胶囊里始终写课程简称。",
                 style: TextStyle(
                   fontSize: 11,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -524,10 +522,10 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
               Platform.isIOS
                   ? "iOS 只能在 App 运行时开启灵动岛：点“显示测试课程”后回桌面/锁屏看顶部，"
                         "或上课前打开一次 App。"
-                  : "上岛要点：① 系统为 Android 16 及以上，且厂商实现了这套实时通知 —— "
-                        "小米超级岛、OPPO 流体云、vivo 原子岛、荣耀灵动胶囊、三星 Now Bar 等"
-                        "叫法不同，不限于小米；"
-                        "② 系统给本应用开着“实时更新 / 实况通知 / 原子通知”这类开关；"
+                  : "上岛要点：① 系统为 Android 16 及以上，且厂商做了这套实时通知"
+                        "（小米叫超级岛，OPPO 叫流体云，vivo 叫原子岛，荣耀叫灵动胶囊，"
+                        "三星叫 Now Bar）；"
+                        "② 系统里给本应用开着“实时更新 / 实况通知 / 原子通知”这类开关；"
                         "③ 点“显示测试课程”后请回桌面或锁屏看状态栏 —— App 在前台时系统通常不显示岛屿；"
                         "④ 回到本页点右上角刷新，“当前已被提升”会变成“是”。",
               style: TextStyle(

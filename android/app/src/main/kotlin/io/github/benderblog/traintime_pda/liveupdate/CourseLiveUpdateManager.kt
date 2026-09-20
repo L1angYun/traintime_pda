@@ -250,10 +250,11 @@ object CourseLiveUpdateManager {
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setStyle(style)
-            // What the collapsed island and the status bar chip show. The chip is
-            // drawn by the system, which makes its text big and bold: it carries
-            // the course, since that is the one thing worth reading there.
-            .setShortCriticalText(chipLabel(event, badge))
+            // What the collapsed island and the status bar chip show. Only a
+            // couple of characters fit there, so it is the short form of the
+            // name: a single character says nothing about which class it is, and
+            // the badge is not part of this chip anyway.
+            .setShortCriticalText(event.shortTitle.ifEmpty { event.title })
             // This is the bit which asks the system to promote the notification
             // into a Live Update.
             .setRequestPromotedOngoing(true)
@@ -272,24 +273,6 @@ object CourseLiveUpdateManager {
         }
 
         return builder.build()
-    }
-
-    /// The text of the chip of the collapsed island.
-    ///
-    /// It is as short as the badge when a badge is drawn (one character, or two
-    /// for the short name) and the whole short name when the card has no badge to
-    /// compare with. Names without Chinese characters are kept whole, a single
-    /// letter would not say which class it is.
-    private fun chipLabel(event: CourseLiveUpdateEvent, badge: Int): String {
-        val name = event.shortTitle.ifEmpty { event.title }
-        val characters = when (badge) {
-            BADGE_STYLE_SHORT -> 2
-            BADGE_STYLE_NONE -> return name
-            else -> 1
-        }
-
-        val isChinese = name.any { it.code in 0x4E00..0x9FFF }
-        return if (isChinese) name.take(characters) else name
     }
 
     /// Which badge the card shows, one of the `BADGE_STYLE_` values.
