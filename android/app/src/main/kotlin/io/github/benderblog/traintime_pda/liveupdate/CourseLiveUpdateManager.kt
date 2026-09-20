@@ -53,6 +53,9 @@ object CourseLiveUpdateManager {
     private const val LEAD_MINUTES_KEY = "lead_minutes"
     private const val DEFAULT_LEAD_MINUTES = 20
 
+    /// The class which is on the island right now, as JSON.
+    private const val SHOWN_EVENT_KEY = "shown_event"
+
     /// Remembers how the badge of the course should look.
     fun setBadgeStyle(context: Context, style: Int) {
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
@@ -82,6 +85,54 @@ object CourseLiveUpdateManager {
             .apply()
     }
 
+    /// Remembers which class is on the island right now.
+    ///
+    /// The look of the notification is decided on the platform side, and only
+    /// one class fits on the island, so the one which is up has to be known:
+    /// changing the badge inside it must not put a second one next to it.
+    private fun rememberShown(context: Context, event: CourseLiveUpdateEvent) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .putString(SHOWN_EVENT_KEY, event.toJson().toString())
+            .apply()
+    }
+
+    private fun shownEvent(context: Context): CourseLiveUpdateEvent? {
+        val raw = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .getString(SHOWN_EVENT_KEY, null) ?: return null
+        return try {
+            CourseLiveUpdateEvent.fromJson(org.json.JSONObject(raw))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun forgetShown(context: Context) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .remove(SHOWN_EVENT_KEY)
+            .apply()
+    }
+
+    /// Takes the class which is on the island off it.
+    fun hideCurrent(context: Context) {
+        shownEvent(context)?.let { cancel(context, it.id) }
+        forgetShown(context)
+    }
+
+    /// Posts the class which is on the island again, with the look which is set
+    /// right now. Returns whether there was a class to post.
+    fun refreshCurrent(context: Context): Boolean {
+        val event = shownEvent(context) ?: return false
+        if (System.currentTimeMillis() >= event.endMillis) {
+            forgetShown(context)
+            return false
+        }
+
+        show(context, event)
+        return true
+    }
+
     val isSupported: Boolean
         get() = Build.VERSION.SDK_INT >= LIVE_UPDATE_API_LEVEL
 
@@ -101,30 +152,40 @@ object CourseLiveUpdateManager {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         ensureChannel(context, manager)
         manager.notify(event.id, build(context, event, now))
+        rememberShown(context, event)
     }
 
     fun cancel(context: Context, id: Int) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.cancel(id)
+        if (shownEvent(context)?.id == id) {
+            forgetShown(context)
+        }
     }
 
     /// Shows a made up class right away, to try the island out without waiting
     /// for a real lesson. It is not part of the schedule, so it does not touch
     /// the pending alarms.
+    ///
+    /// Only one class fits on the island, so the preview takes the place of the
+    /// class which is shown at that moment; [stopPreview] puts it back.
     fun showPreview(context: Context, event: CourseLiveUpdateEvent) {
         if (Build.VERSION.SDK_INT < LIVE_UPDATE_API_LEVEL) {
             return
         }
 
-        show(
-            context,
-            event.copy(id = PREVIEW_NOTIFICATION_ID),
-            System.currentTimeMillis(),
-        )
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        ensureChannel(context, manager)
+        shownEvent(context)?.let { manager.cancel(it.id) }
+        manager.notify(PREVIEW_NOTIFICATION_ID, build(context, event, System.currentTimeMillis()))
     }
 
     fun stopPreview(context: Context) {
-        cancel(context, PREVIEW_NOTIFICATION_ID)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager?.cancel(PREVIEW_NOTIFICATION_ID)
+
+        /// Whatever the preview replaced comes back.
+        refreshCurrent(context)
     }
 
     private fun ensureChannel(context: Context, manager: NotificationManager) {

@@ -41,6 +41,9 @@ object CourseLiveUpdateChannel {
                         result.success(null)
                     }
 
+                    "refreshCurrent" ->
+                        result.success(CourseLiveUpdateManager.refreshCurrent(context))
+
                     "diagnostics" -> result.success(CourseLiveUpdateManager.diagnostics(context))
 
                     "setBadgeStyle" -> {

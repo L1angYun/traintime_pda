@@ -106,6 +106,10 @@ object CourseLiveUpdateScheduler {
             }
         }
         store(context, emptyList())
+
+        // The class which is on the island right now has no alarm left which
+        // would take it off, so it is removed here.
+        CourseLiveUpdateManager.hideCurrent(context)
     }
 
     /// Puts the stored schedule back in place, e.g. after a reboot.

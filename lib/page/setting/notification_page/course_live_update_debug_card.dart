@@ -155,12 +155,21 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
     }
   }
 
-  /// 换一种课程徽标,立刻用新样式重发一次,方便直接对比。
+  /// 换一种课程徽标。
+  ///
+  /// 岛上正显示着课的时候,只把那一节按新样式重发一次 —— 再发一节新的会变成两个岛。
+  /// 什么都没显示时才用下一节课做个预览。
   Future<void> _setBadgeStyle(CourseLiveUpdateBadgeStyle style) async {
     setState(() => _badgeStyle = style);
-    await CourseLiveUpdateService.instance.setBadgeStyle(style);
-    if (mounted) {
+
+    final service = CourseLiveUpdateService.instance;
+    await service.setBadgeStyle(style);
+
+    final refreshed = await service.refreshCurrent();
+    if (!refreshed && mounted) {
       await _showPreview(realTime: true);
+    } else if (mounted) {
+      showToast(context: context, msg: "已按新样式重发岛上正在上的那节课");
     }
   }
 
@@ -306,65 +315,71 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                   "右下 ${_corners.bottomRight.toStringAsFixed(1)} dp",
             ),
 
-            const Divider(height: 20),
+            /// 提前量和徽标都由平台侧的代码决定，iOS 上这两个设置没有意义。
+            if (Platform.isAndroid) ...[
+              const Divider(height: 20),
 
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    "上课前多久上岛",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                ),
-                DropdownButton<int>(
-                  value: _leadMinutes,
-                  items: [
-                    for (final minutes in kLiveUpdateLeadMinuteOptions)
-                      DropdownMenuItem(
-                        value: minutes,
-                        child: Text(minutes == 0 ? "上课时" : "$minutes 分钟"),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "上课前多久上岛",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
-                  ],
-                  onChanged: _isBusy
-                      ? null
-                      : (value) {
-                          if (value != null) {
-                            _setLeadMinutes(value);
-                          }
-                        },
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _leadMinutes == 0
-                  ? "上课那一刻才出现，不做提前提醒"
-                  : "上课前 $_leadMinutes 分钟出现，通知里的倒计时指向上课时间",
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-
-            const Divider(height: 20),
-
-            const Text(
-              "岛上的课程徽标",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            const SizedBox(height: 6),
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<CourseLiveUpdateBadgeStyle>(
-                segments: [
-                  for (final style in CourseLiveUpdateBadgeStyle.values)
-                    ButtonSegment(value: style, label: Text(style.label)),
+                    ),
+                  ),
+                  DropdownButton<int>(
+                    value: _leadMinutes,
+                    items: [
+                      for (final minutes in kLiveUpdateLeadMinuteOptions)
+                        DropdownMenuItem(
+                          value: minutes,
+                          child: Text(minutes == 0 ? "上课时" : "$minutes 分钟"),
+                        ),
+                    ],
+                    onChanged: _isBusy
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              _setLeadMinutes(value);
+                            }
+                          },
+                  ),
                 ],
-                selected: {_badgeStyle},
-                showSelectedIcon: false,
-                onSelectionChanged: (values) => _setBadgeStyle(values.first),
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                _leadMinutes == 0
+                    ? "上课那一刻才出现，不做提前提醒"
+                    : "上课前 $_leadMinutes 分钟出现，通知里的倒计时指向上课时间",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+
+              const Divider(height: 20),
+
+              const Text(
+                "岛上的课程徽标",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<CourseLiveUpdateBadgeStyle>(
+                  segments: [
+                    for (final style in CourseLiveUpdateBadgeStyle.values)
+                      ButtonSegment(value: style, label: Text(style.label)),
+                  ],
+                  selected: {_badgeStyle},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (values) => _setBadgeStyle(values.first),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             Row(

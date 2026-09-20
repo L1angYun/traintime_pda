@@ -328,6 +328,25 @@ class CourseLiveUpdateService {
     }
   }
 
+  /// 让岛上正在显示的那节课按现在的外观重发一次。
+  ///
+  /// The notification is built by the platform and only one class fits on the
+  /// island, so this is how a change of the look (the badge, for instance)
+  /// reaches what is already there, instead of a second notification.
+  /// Returns whether there was a class on the island.
+  Future<bool> refreshCurrent() async {
+    if (!await isSupported()) {
+      return false;
+    }
+
+    try {
+      return await _channel.invokeMethod<bool>("refreshCurrent") ?? false;
+    } catch (e) {
+      log.warning("[CourseLiveUpdate] Unable to refresh the island: $e");
+      return false;
+    }
+  }
+
   /// What the platform reports about the island, for the debug page.
   Future<Map<String, dynamic>> diagnostics() async {
     if (!await isSupported()) {
