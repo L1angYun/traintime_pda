@@ -34,6 +34,7 @@ class CourseLiveUpdateEvent {
     this.shortTitle = "",
     this.location = "",
     this.nextText = "",
+    this.upcomingText = "",
     this.periods = 1,
   });
 
@@ -67,6 +68,13 @@ class CourseLiveUpdateEvent {
   /// "下一节 10:25 · B-106", empty when it is the last class of the day.
   final String nextText;
 
+  /// "即将开始", shown while the class has not begun yet.
+  ///
+  /// The countdown of the notification runs towards the start of the class
+  /// before it begins, exactly like it runs towards its end afterwards, so the
+  /// island says which of the two it is showing.
+  final String upcomingText;
+
   /// How many class periods the course takes, used to cut the progress bar.
   final int periods;
 
@@ -82,6 +90,7 @@ class CourseLiveUpdateEvent {
     shortTitle: shortTitle,
     location: location,
     nextText: nextText ?? this.nextText,
+    upcomingText: upcomingText,
     periods: periods,
   );
 
@@ -96,6 +105,7 @@ class CourseLiveUpdateEvent {
     "timeText": timeText,
     "shortTitle": shortTitle,
     "nextText": nextText,
+    "upcomingText": upcomingText,
     "periods": periods,
   };
 }
@@ -231,6 +241,24 @@ class CourseLiveUpdateService {
     }
   }
 
+  /// 上课前多久把课放上岛（分钟，0 表示上课时才出现）。
+  ///
+  /// The alarms which put a class on the island are set by the platform, so the
+  /// choice is kept there as well. 新的设置要在下次排程时才生效。
+  Future<void> setLeadMinutes(int minutes) async {
+    if (!Platform.isAndroid || !await isSupported()) {
+      return;
+    }
+
+    try {
+      await _androidChannel.invokeMethod("setLeadMinutes", {
+        "minutes": minutes.clamp(0, 60),
+      });
+    } catch (e) {
+      log.warning("[CourseLiveUpdate] Unable to set the lead time: $e");
+    }
+  }
+
   /// Shows a class right away, for trying the island out without waiting for
   /// the lesson.
   ///
@@ -270,6 +298,10 @@ class CourseLiveUpdateService {
         periodText: periodText,
         timeText: "${_formatTime(previewStart)} - ${_formatTime(previewEnd)}",
         nextText: nextText,
+        upcomingText: NonUII18n.translate(
+          CourseReminderService().getCurrentLocale(),
+          "course_live_update.upcoming_start",
+        ),
         periods: periods,
       );
 
@@ -488,6 +520,10 @@ class CourseLiveUpdateService {
             ),
       timeText: "${_formatTime(start)} - ${_formatTime(end)}",
       location: location,
+      upcomingText: NonUII18n.translate(
+        locale,
+        "course_live_update.upcoming_start",
+      ),
       periods: (stopPeriod - startPeriod + 1).clamp(1, 20),
     );
   }

@@ -19,6 +19,8 @@ data class CourseLiveUpdateEvent(
     val timeText: String = "",
     /// "下一节 10:25 · B-106"
     val nextText: String = "",
+    /// "即将开始", shown while the class has not begun yet.
+    val upcomingText: String = "",
     /// How many class periods the lesson takes.
     val periods: Int = 1,
 ) {
@@ -45,9 +47,15 @@ data class CourseLiveUpdateEvent(
     /// While a lesson is going on the class which comes next is worth more than
     /// the clock: the countdown next to the title already tells how long the
     /// lesson still lasts, and one line is all the room there is. Before the
-    /// lesson starts its own time range is the useful bit.
+    /// lesson starts the countdown runs towards its beginning, which on its own
+    /// looks just like the countdown to the end of a lesson, so the hint that it
+    /// has not begun yet comes first.
     fun footnoteText(now: Long): String =
-        if (now >= startMillis) nextText.ifEmpty { timeText } else timeText
+        if (now >= startMillis) {
+            nextText.ifEmpty { timeText }
+        } else {
+            listOf(upcomingText, timeText).filter { it.isNotEmpty() }.joinToString(" · ")
+        }
 
     /// The moment the countdown of the notification runs towards: the start of
     /// the lesson while it has not begun, its end afterwards.
@@ -65,6 +73,7 @@ data class CourseLiveUpdateEvent(
         putExtra(EXTRA_PERIOD_TEXT, periodText)
         putExtra(EXTRA_TIME_TEXT, timeText)
         putExtra(EXTRA_NEXT_TEXT, nextText)
+        putExtra(EXTRA_UPCOMING_TEXT, upcomingText)
         putExtra(EXTRA_PERIODS, periods)
     }
 
@@ -79,6 +88,7 @@ data class CourseLiveUpdateEvent(
         put("periodText", periodText)
         put("timeText", timeText)
         put("nextText", nextText)
+        put("upcomingText", upcomingText)
         put("periods", periods)
     }
 
@@ -93,6 +103,7 @@ data class CourseLiveUpdateEvent(
         const val EXTRA_PERIOD_TEXT = "course_live_update.periodText"
         const val EXTRA_TIME_TEXT = "course_live_update.timeText"
         const val EXTRA_NEXT_TEXT = "course_live_update.nextText"
+        const val EXTRA_UPCOMING_TEXT = "course_live_update.upcomingText"
         const val EXTRA_PERIODS = "course_live_update.periods"
 
         const val DEFAULT_COLOR: Int = 0xFF4A6CF7.toInt()
@@ -112,6 +123,7 @@ data class CourseLiveUpdateEvent(
                 periodText = intent.getStringExtra(EXTRA_PERIOD_TEXT).orEmpty(),
                 timeText = intent.getStringExtra(EXTRA_TIME_TEXT).orEmpty(),
                 nextText = intent.getStringExtra(EXTRA_NEXT_TEXT).orEmpty(),
+                upcomingText = intent.getStringExtra(EXTRA_UPCOMING_TEXT).orEmpty(),
                 periods = intent.getIntExtra(EXTRA_PERIODS, 1),
             )
         }
@@ -127,6 +139,7 @@ data class CourseLiveUpdateEvent(
             periodText = json.optString("periodText"),
             timeText = json.optString("timeText"),
             nextText = json.optString("nextText"),
+            upcomingText = json.optString("upcomingText"),
             periods = json.optInt("periods", 1),
         )
 
@@ -149,6 +162,7 @@ data class CourseLiveUpdateEvent(
                 periodText = map["periodText"] as? String ?: "",
                 timeText = map["timeText"] as? String ?: "",
                 nextText = map["nextText"] as? String ?: "",
+                upcomingText = map["upcomingText"] as? String ?: "",
                 periods = (map["periods"] as? Number)?.toInt() ?: 1,
             )
         }

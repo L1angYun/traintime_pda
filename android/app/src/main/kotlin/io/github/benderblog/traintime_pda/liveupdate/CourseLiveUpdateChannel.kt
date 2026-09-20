@@ -49,6 +49,12 @@ object CourseLiveUpdateChannel {
                         result.success(null)
                     }
 
+                    "setLeadMinutes" -> {
+                        val minutes = (call.argument<Any?>("minutes") as? Number)?.toInt() ?: 0
+                        CourseLiveUpdateManager.setLeadMinutes(context, minutes)
+                        result.success(null)
+                    }
+
                     "openNotificationSettings" -> {
                         CourseLiveUpdateManager.openNotificationSettings(context)
                         result.success(null)

@@ -19,11 +19,20 @@ object CourseLiveUpdateScheduler {
     const val ACTION_STOP: String =
         "io.github.benderblog.traintime_pda.liveupdate.STOP"
 
-    /// Three alarms per class: its start, its middle and its end.
-    private const val ALARMS_PER_EVENT = 3
+    /// The alarms of one class: it is put on the island some minutes before it
+    /// starts, refreshed when it starts, refreshed again in the middle (the bar
+    /// of periods is a value the system does not move by itself) and taken off
+    /// when it ends.
+    private const val ALARMS_PER_EVENT = 4
 
-    /// Keeps the amount of pending alarms sane.
-    private const val MAX_EVENTS = 240
+    /// What each of the alarms of a class does, in the order of their request
+    /// codes. [cancelAll] walks the very same list.
+    private val ALARM_ACTIONS = listOf(ACTION_START, ACTION_UPDATE, ACTION_UPDATE, ACTION_STOP)
+
+    /// Keeps the amount of pending alarms sane: the platform refuses to keep
+    /// more than a few hundred alarms of an app, and each class takes
+    /// [ALARMS_PER_EVENT] of them.
+    private const val MAX_EVENTS = 120
 
     private const val PREFERENCES = "course_live_update"
     private const val KEY_EVENTS = "events"
@@ -34,6 +43,7 @@ object CourseLiveUpdateScheduler {
         cancelAll(context)
 
         val now = System.currentTimeMillis()
+        val lead = CourseLiveUpdateManager.leadMillis(context)
         val planned = events
             .filter { it.endMillis > now }
             .sortedBy { it.startMillis }
@@ -42,18 +52,27 @@ object CourseLiveUpdateScheduler {
         var index = 0
         for (event in planned) {
             val offset = index * ALARMS_PER_EVENT
-            if (event.startMillis > now) {
-                setAlarm(context, event, ACTION_START, event.startMillis, offset)
+            val showAt = event.startMillis - lead
+            if (showAt > now) {
+                setAlarm(context, event, ACTION_START, showAt, offset)
             } else {
-                // The class is already going on, show it right away: the user
-                // has just opened the app in the middle of it.
+                // The class starts within the lead time (or is already going
+                // on): the user has just opened the app inside that window, so
+                // it goes up right away.
                 CourseLiveUpdateManager.show(context, event, now)
+            }
+            // The countdown of the notification runs towards the start of the
+            // class by itself, but the line under the title and the bar of
+            // periods are what they were when it went up, so a class which went
+            // up early is posted again when it really begins.
+            if (lead > 0 && event.startMillis > now) {
+                setAlarm(context, event, ACTION_UPDATE, event.startMillis, offset + 1)
             }
             val middle = event.startMillis + event.durationMillis / 2
             if (middle > now) {
-                setAlarm(context, event, ACTION_UPDATE, middle, offset + 1)
+                setAlarm(context, event, ACTION_UPDATE, middle, offset + 2)
             }
-            setAlarm(context, event, ACTION_STOP, event.endMillis, offset + 2)
+            setAlarm(context, event, ACTION_STOP, event.endMillis, offset + 3)
             index++
         }
 
@@ -65,11 +84,7 @@ object CourseLiveUpdateScheduler {
     fun cancelAll(context: Context) {
         val count = loadCount(context)
         for (index in 0 until count * ALARMS_PER_EVENT) {
-            val action = when (index % ALARMS_PER_EVENT) {
-                0 -> ACTION_START
-                1 -> ACTION_UPDATE
-                else -> ACTION_STOP
-            }
+            val action = ALARM_ACTIONS[index % ALARMS_PER_EVENT]
             val alarmManager = context.getSystemService(AlarmManager::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
                 context,

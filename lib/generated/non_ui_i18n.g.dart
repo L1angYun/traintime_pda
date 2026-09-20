@@ -23,6 +23,7 @@ class NonUII18n {
         "period": "Period {start}-{stop}",
         "period_single": "Period {start}",
         "next_class": "Next {time} · {location}",
+        "upcoming_start": "Starts soon",
         "no_location": "No classroom",
       },
     },
@@ -37,6 +38,7 @@ class NonUII18n {
         "period": "第 {start}-{stop} 节",
         "period_single": "第 {start} 节",
         "next_class": "下一节 {time} · {location}",
+        "upcoming_start": "即将开始",
         "no_location": "未知教室",
       },
     },
@@ -51,6 +53,7 @@ class NonUII18n {
         "period": "第 {start}-{stop} 節",
         "period_single": "第 {start} 節",
         "next_class": "下一節 {time} · {location}",
+        "upcoming_start": "即將開始",
         "no_location": "未知教室",
       },
     },
@@ -75,15 +78,18 @@ class NonUII18n {
 
   /// Get translation with parameters
   /// Example: NonUII18n.translate("zh_CN", "course_reminder.title", translationParams: {"name": "Maths"} )
-  static String translate(String locale, String key, {Map<String, dynamic>? translateParams}) {
+  static String translate(
+    String locale,
+    String key, {
+    Map<String, dynamic>? translateParams,
+  }) {
     var result = _get(locale, key);
     if (result.isEmpty) return "";
     if (translateParams != null) {
       translateParams.forEach((k, v) {
-       result = result.replaceAll("{$k}", v.toString());
+        result = result.replaceAll("{$k}", v.toString());
       });
     }
     return result;
   }
-
 }

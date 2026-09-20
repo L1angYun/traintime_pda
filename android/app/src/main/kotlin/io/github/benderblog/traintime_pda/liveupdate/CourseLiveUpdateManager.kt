@@ -45,11 +45,36 @@ object CourseLiveUpdateManager {
     private const val BADGE_STYLE_SQUARE = 2
     private const val BADGE_STYLE_NONE = 3
 
+    /// How long before a class starts its Live Update shows up.
+    private const val LEAD_MINUTES_KEY = "lead_minutes"
+    private const val DEFAULT_LEAD_MINUTES = 5
+
     /// Remembers how the badge of the course should look.
     fun setBadgeStyle(context: Context, style: Int) {
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
             .edit()
             .putInt(BADGE_STYLE_KEY, style.coerceIn(0, BADGE_STYLE_NONE))
+            .apply()
+    }
+
+    /// Minutes between the moment the Live Update of a class shows up and the
+    /// moment the class starts.
+    fun leadMinutes(context: Context): Int =
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .getInt(LEAD_MINUTES_KEY, DEFAULT_LEAD_MINUTES)
+            .coerceIn(0, MAX_LEAD_MINUTES)
+
+    fun leadMillis(context: Context): Long = leadMinutes(context) * 60_000L
+
+    /// Remembers how early the island of a class should appear.
+    ///
+    /// It is kept on this side as well: the alarms which put a class on the
+    /// island are set by the platform when the app is not running, and they
+    /// need to know when to fire.
+    fun setLeadMinutes(context: Context, minutes: Int) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(LEAD_MINUTES_KEY, minutes.coerceIn(0, MAX_LEAD_MINUTES))
             .apply()
     }
 
@@ -334,6 +359,7 @@ object CourseLiveUpdateManager {
             "promoted" to isPromoted(context),
             "channelImportance" to (channel?.importance ?: -1),
             "badgeStyle" to badgeStyle(context),
+            "leadMinutes" to leadMinutes(context),
         )
     }
 
@@ -375,4 +401,7 @@ object CourseLiveUpdateManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
+
+    /// The longest lead time the setting allows.
+    const val MAX_LEAD_MINUTES = 60
 }

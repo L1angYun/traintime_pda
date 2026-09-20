@@ -1,8 +1,9 @@
 // Copyright 2026 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0
 
-// Debug card for the Live Update (the "Super Island" of Xiaomi, the Dynamic
-// Island of iOS) of the ongoing class.
+// Debug card for the Live Update (the Android 16 notification which the system
+// shows on the status bar, in the "island" of the vendors which have one, and on
+// the lock screen) of the ongoing class.
 
 import 'dart:io';
 
@@ -12,7 +13,7 @@ import 'package:watermeter/repository/display_corner.dart';
 import 'package:watermeter/repository/notification/course_live_update_service.dart';
 import 'package:watermeter/repository/notification/course_reminder_service.dart';
 
-/// 超级岛 / 灵动岛调试组件
+/// 实时更新 / 灵动岛调试组件
 class CourseLiveUpdateDebugCard extends StatefulWidget {
   const CourseLiveUpdateDebugCard({super.key});
 
@@ -20,6 +21,9 @@ class CourseLiveUpdateDebugCard extends StatefulWidget {
   State<CourseLiveUpdateDebugCard> createState() =>
       _CourseLiveUpdateDebugCardState();
 }
+
+/// 可以选的提前量(分钟),0 表示上课时才出现。
+const kLiveUpdateLeadMinuteOptions = [0, 3, 5, 10, 15, 20, 30];
 
 class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
   bool _isSupported = false;
@@ -34,6 +38,9 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
 
   /// 岛上的课程徽标样式,由平台侧保存,这里只是它的镜像。
   CourseLiveUpdateBadgeStyle _badgeStyle = CourseLiveUpdateBadgeStyle.none;
+
+  /// 上课前多久上岛(分钟),同样由平台侧保存。
+  int _leadMinutes = 5;
 
   @override
   void initState() {
@@ -70,6 +77,8 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
       _badgeStyle = CourseLiveUpdateBadgeStyle.fromIndex(
         diagnostics["badgeStyle"],
       );
+      final lead = (diagnostics["leadMinutes"] as int?) ?? 5;
+      _leadMinutes = kLiveUpdateLeadMinuteOptions.contains(lead) ? lead : 5;
       _upcoming = supported
           ? service.collectEvents(daysToSchedule: 1)
           : const [];
@@ -109,7 +118,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
     final useRealTime = realTime && next != null;
 
     final shown = await CourseLiveUpdateService.instance.showPreview(
-      title: next?.title ?? "超级岛测试课程",
+      title: next?.title ?? "测试课程",
       body: next != null && next.body.isNotEmpty ? next.body : "B-106 · XDYou",
       periodText: next?.periodText ?? "第 3-4 节",
       nextText: next?.nextText ?? "",
@@ -147,6 +156,29 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
     if (mounted) {
       await _showPreview(realTime: true);
     }
+  }
+
+  /// 改一下提前多久上岛,并且马上按新设置重排一次,不用等到下次开 App。
+  Future<void> _setLeadMinutes(int minutes) async {
+    setState(() {
+      _leadMinutes = minutes;
+      _isBusy = true;
+    });
+
+    final service = CourseLiveUpdateService.instance;
+    await service.setLeadMinutes(minutes);
+    await service.scheduleFromCourseData(daysToSchedule: 1);
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isBusy = false);
+    showToast(
+      context: context,
+      msg: minutes == 0
+          ? "已改成上课时才上岛，并按新设置重排了未来 24 小时"
+          : "已改成上课前 $minutes 分钟上岛，并按新设置重排了未来 24 小时",
+    );
   }
 
   Future<void> _scheduleNow() async {
@@ -198,7 +230,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                 ),
                 const SizedBox(width: 6),
                 const Text(
-                  "超级岛 / 灵动岛（Live Update）",
+                  "实时更新 / 灵动岛（Live Update）",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
@@ -233,7 +265,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                 "系统允许实时更新",
                 _diagnostics["canPostPromoted"] == true
                     ? "是"
-                    : "否（系统设置里打开本应用的“实时更新/焦点通知”）",
+                    : "否（在系统设置里给本应用打开“实时更新 / 实况通知 / 原子通知”）",
               ),
             if (_diagnostics.containsKey("promotableCharacteristics"))
               _infoRow(
@@ -266,6 +298,46 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                   "右上 ${_corners.topRight.toStringAsFixed(1)} / "
                   "左下 ${_corners.bottomLeft.toStringAsFixed(1)} / "
                   "右下 ${_corners.bottomRight.toStringAsFixed(1)} dp",
+            ),
+
+            const Divider(height: 20),
+
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    "上课前多久上岛",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+                DropdownButton<int>(
+                  value: _leadMinutes,
+                  items: [
+                    for (final minutes in kLiveUpdateLeadMinuteOptions)
+                      DropdownMenuItem(
+                        value: minutes,
+                        child: Text(minutes == 0 ? "上课时" : "$minutes 分钟"),
+                      ),
+                  ],
+                  onChanged: _isBusy
+                      ? null
+                      : (value) {
+                          if (value != null) {
+                            _setLeadMinutes(value);
+                          }
+                        },
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _leadMinutes == 0
+                  ? "上课那一刻才出现，不做提前提醒"
+                  : "上课前 $_leadMinutes 分钟出现，通知里的倒计时指向上课时间",
+              style: TextStyle(
+                fontSize: 11,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
 
             const Divider(height: 20),
@@ -421,7 +493,10 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
               Platform.isIOS
                   ? "iOS 只能在 App 运行时开启灵动岛：点“显示测试课程”后回桌面/锁屏看顶部，"
                         "或上课前打开一次 App。"
-                  : "上岛要点：① Android 16 / HyperOS 3；② 系统给本应用开了“实时更新/焦点通知”；"
+                  : "上岛要点：① 系统为 Android 16 及以上，且厂商实现了这套实时通知 —— "
+                        "小米超级岛、OPPO 流体云、vivo 原子岛、荣耀灵动胶囊、三星 Now Bar 等"
+                        "叫法不同，不限于小米；"
+                        "② 系统给本应用开着“实时更新 / 实况通知 / 原子通知”这类开关；"
                         "③ 点“显示测试课程”后请回桌面或锁屏看状态栏 —— App 在前台时系统通常不显示岛屿；"
                         "④ 回到本页点右上角刷新，“当前已被提升”会变成“是”。",
               style: TextStyle(
