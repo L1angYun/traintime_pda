@@ -7,7 +7,6 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:watermeter/repository/logger.dart';
 
 /// Radii of the four corners of the display, in logical pixels.
@@ -43,61 +42,46 @@ class DisplayCornerRadii {
 ///
 /// The corner of the screen is not a window inset, so a widget which reaches
 /// the edge of the display has no idea that the display is rounded there and
-/// gets covered by it. Android knows the radii, so they are queried once and
-/// cached for the rest of the session.
+/// gets covered by it. Android knows the radii, so they are queried here and
+/// kept, ready for the widgets which are laid out against them.
 class DisplayCorner {
   DisplayCorner._();
 
   static const MethodChannel _channel = MethodChannel("xdyou/display_insets");
 
   static DisplayCornerRadii _radii = DisplayCornerRadii.zero;
-  static bool _loaded = false;
+
+  /// Whether the platform has already been asked again for an answer it did not
+  /// have on the first frame.
+  static bool _retried = false;
 
   static DisplayCornerRadii get radii => _radii;
 
-  /// Padding which keeps content clear of the rounded corners.
+  /// Asks the platform for the radii. Returns the values which are known
+  /// afterwards.
   ///
-  /// Only the bottom edge needs it: content which is further away from the
-  /// bottom edge than the corner radius is never covered, no matter how close
-  /// it is to the sides.
-  static EdgeInsets get safeInsets => EdgeInsets.only(bottom: _radii.bottom);
-
-  /// Queries the radii, at most once per run. Returns the cached value.
-  static Future<DisplayCornerRadii> load() async {
-    if (_loaded) {
-      return _radii;
-    }
-    _loaded = true;
-
-    if (!Platform.isAndroid) {
-      return _radii;
-    }
-
-    await _query();
-
-    if (_radii.bottom == 0 && _radii.left == 0 && _radii.right == 0) {
-      /// The window insets are not always there on the very first frame, give
-      /// the platform a moment and ask once more.
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      await _query();
-    }
-
-    return _radii;
-  }
-
-  /// Asks the platform again, for a window which has just been resized.
-  ///
-  /// The corners of the display stop mattering as soon as the window no longer
-  /// covers it: an app in a floating window or in a split screen has nothing to
-  /// clear there, and the room the corners would take is all it has. The answer
-  /// therefore has to follow the window.
+  /// It is called again whenever the window is of a new size, so that the answer
+  /// follows the window: the corners of the display stop mattering as soon as the
+  /// window no longer covers it (a floating window, a split screen), and the room
+  /// they would take is all such a window has.
   static Future<DisplayCornerRadii> refresh() async {
     if (!Platform.isAndroid) {
       return _radii;
     }
 
-    _loaded = true;
     await _query();
+
+    if (!_retried &&
+        _radii.bottom == 0 &&
+        _radii.left == 0 &&
+        _radii.right == 0) {
+      /// The window insets are not always there on the very first frame, give
+      /// the platform a moment and ask once more.
+      _retried = true;
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      await _query();
+    }
+
     return _radii;
   }
 

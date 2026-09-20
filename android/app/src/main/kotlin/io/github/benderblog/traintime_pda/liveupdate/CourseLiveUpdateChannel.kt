@@ -16,8 +16,7 @@ object CourseLiveUpdateChannel {
 
                     "schedule" -> {
                         val events = parseEvents(call.argument<Any?>("events"))
-                        CourseLiveUpdateScheduler.schedule(context, events)
-                        result.success(events.size)
+                        result.success(CourseLiveUpdateScheduler.schedule(context, events))
                     }
 
                     "cancelAll" -> {

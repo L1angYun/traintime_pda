@@ -332,15 +332,18 @@ class CourseLiveUpdateService {
   ///
   /// The notification is built by the platform and only one class fits on the
   /// island, so this is how a change of the look (the badge, for instance)
-  /// reaches what is already there, instead of a second notification.
+  /// reaches what is already there, instead of a second notification. 它只在
+  /// Android 上有意义,那边的通知由原生画;iOS 的活动界面是 Widget 自己随
+  /// 时间重绘的,没有「重发一次」这回事。
   /// Returns whether there was a class on the island.
   Future<bool> refreshCurrent() async {
-    if (!await isSupported()) {
+    if (!Platform.isAndroid || !await isSupported()) {
       return false;
     }
 
     try {
-      return await _channel.invokeMethod<bool>("refreshCurrent") ?? false;
+      return await _androidChannel.invokeMethod<bool>("refreshCurrent") ??
+          false;
     } catch (e) {
       log.warning("[CourseLiveUpdate] Unable to refresh the island: $e");
       return false;

@@ -39,7 +39,10 @@ object CourseLiveUpdateScheduler {
     private const val KEY_EVENT_COUNT = "event_count"
 
     /// Replaces the whole schedule with [events].
-    fun schedule(context: Context, events: List<CourseLiveUpdateEvent>) {
+    ///
+    /// Returns how many classes are on the island from now on: the ones which
+    /// are already over are dropped, and so are the ones past [MAX_EVENTS].
+    fun schedule(context: Context, events: List<CourseLiveUpdateEvent>): Int {
         cancelAll(context)
 
         val now = System.currentTimeMillis()
@@ -86,6 +89,7 @@ object CourseLiveUpdateScheduler {
 
         log("scheduled $index classes")
         store(context, planned)
+        return index
     }
 
     /// Drops everything, the ongoing notification included.

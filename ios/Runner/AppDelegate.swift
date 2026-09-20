@@ -53,6 +53,8 @@ struct CourseActivityAttributes: ActivityAttributes {
         var timeText: String
         /// "下一节 10:25 · B-106"
         var nextText: String
+        /// "即将开始", shown while the class has not begun yet.
+        var upcomingText: String
         /// How many class periods the lesson takes.
         var periods: Int
         var startDate: Date
@@ -68,7 +70,13 @@ struct CourseActivityAttributes: ActivityAttributes {
 enum CourseLiveActivityChannel {
     private static let name = "xdyou/live_activity"
 
-    /// The island is only worth showing right before the class starts.
+    /// How early the activity of a class may be started.
+    ///
+    /// iOS has no way of starting an activity at a given moment on its own: the
+    /// app can only do it while it runs, so the class which comes next is put on
+    /// the island as soon as the app is opened within this window, and the widget
+    /// itself counts down to the beginning of the class. Android has alarms, so
+    /// it shows its island a fixed number of minutes before the class instead.
     @available(iOS 16.2, *)
     private static let lookAhead: TimeInterval = 4 * 60 * 60
 
@@ -263,6 +271,7 @@ enum CourseLiveActivityChannel {
                 periodText: raw["periodText"] as? String ?? "",
                 timeText: raw["timeText"] as? String ?? "",
                 nextText: raw["nextText"] as? String ?? "",
+                upcomingText: raw["upcomingText"] as? String ?? "",
                 periods: max((raw["periods"] as? NSNumber)?.intValue ?? 1, 1),
                 startDate: start,
                 endDate: end,

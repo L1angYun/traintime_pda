@@ -64,7 +64,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
     final diagnostics = supported
         ? await service.diagnostics()
         : const <String, dynamic>{};
-    await DisplayCorner.load();
+    await DisplayCorner.refresh();
 
     if (!mounted) {
       return;

@@ -412,7 +412,7 @@ object CourseLiveUpdateManager {
     /// page.
     fun diagnostics(context: Context): Map<String, Any?> {
         val manager = context.getSystemService(NotificationManager::class.java)
-        ensureChannelIfPossible(context, manager)
+        manager?.let { ensureChannel(context, it) }
         val channel = manager?.getNotificationChannel(CHANNEL_ID)
 
         return mapOf(
@@ -433,12 +433,6 @@ object CourseLiveUpdateManager {
             return false
         }
         return manager?.canPostPromotedNotifications() ?: false
-    }
-
-    private fun ensureChannelIfPossible(context: Context, manager: NotificationManager?) {
-        if (manager != null) {
-            ensureChannel(context, manager)
-        }
     }
 
     /// Opens the notification settings of the app, where the user can turn the

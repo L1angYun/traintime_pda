@@ -43,6 +43,8 @@ struct CourseActivityAttributes: ActivityAttributes {
         var timeText: String
         /// "下一节 10:25 · B-106"
         var nextText: String
+        /// "即将开始", shown while the class has not begun yet.
+        var upcomingText: String
         /// How many class periods the lesson takes.
         var periods: Int
         var startDate: Date
@@ -74,7 +76,7 @@ struct CourseLiveActivityWidget: Widget {
                             }
                         }
                     } icon: {
-                        CourseActivityBadge(state: context.state, compact: true)
+                        CourseActivityBadge(state: context.state)
                     }
                     .font(.caption)
                     .foregroundStyle(CourseActivityColor.of(context.state.colorHex))
@@ -91,7 +93,7 @@ struct CourseLiveActivityWidget: Widget {
                     CourseActivityProgress(state: context.state)
                 }
             } compactLeading: {
-                CourseActivityBadge(state: context.state, compact: true)
+                CourseActivityBadge(state: context.state)
             } compactTrailing: {
                 CourseActivityCountdown(state: context.state)
                     .monospacedDigit()
@@ -99,7 +101,6 @@ struct CourseLiveActivityWidget: Widget {
             } minimal: {
                 CourseActivityBadge(
                     state: context.state,
-                    compact: true,
                     singleCharacter: true
                 )
             }
@@ -115,21 +116,18 @@ struct CourseLiveActivityWidget: Widget {
 @available(iOSApplicationExtension 16.2, *)
 private struct CourseActivityBadge: View {
     let state: CourseActivityAttributes.ContentState
-    var compact: Bool = false
     var singleCharacter: Bool = false
 
     var body: some View {
         Text(label)
-            .font(.system(size: compact ? 11 : 13, weight: .semibold))
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.white)
-            .frame(width: side, height: side)
+            .frame(width: 20, height: 20)
             .background(
                 CourseActivityColor.of(state.colorHex),
-                in: RoundedRectangle(cornerRadius: side * 0.3, style: .continuous)
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
             )
     }
-
-    private var side: CGFloat { compact ? 20 : 24 }
 
     private var label: String {
         let name = state.shortTitle.isEmpty ? state.name : state.shortTitle
@@ -182,13 +180,28 @@ private struct CourseActivityProgress: View {
             )
             .tint(CourseActivityColor.of(state.colorHex))
 
-            if !state.nextText.isEmpty {
-                Text(state.nextText)
+            if !footnote.isEmpty {
+                Text(footnote)
                     .font(.caption2)
                     .lineLimit(1)
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    /// The line under the bar.
+    ///
+    /// Before the class begins the countdown runs towards its start, which looks
+    /// exactly like the countdown to the end of a class, so the hint that it has
+    /// not begun yet comes first - the same line the Android side shows. Once it
+    /// has begun the class which comes next is worth more than the clock.
+    private var footnote: String {
+        if Date() < state.startDate {
+            return [state.upcomingText, state.timeText]
+                .filter { !$0.isEmpty }
+                .joined(separator: " · ")
+        }
+        return state.nextText.isEmpty ? state.timeText : state.nextText
     }
 
     private var timeRange: String {
