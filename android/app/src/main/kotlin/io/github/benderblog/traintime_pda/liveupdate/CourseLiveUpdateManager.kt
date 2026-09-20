@@ -35,13 +35,23 @@ object CourseLiveUpdateManager {
     /// Kept outside of the range the scheduled classes use.
     private const val PREVIEW_NOTIFICATION_ID = 2147483000
 
-    /// The looks of the badge are chosen on the debug page, which writes them
-    /// into the preferences shared with the Dart side.
-    private const val FLUTTER_PREFERENCES = "FlutterSharedPreferences"
-    private const val BADGE_STYLE_PREFERENCE = "liveUpdateBadgeStyle"
+    /// The looks of the badge are chosen on the debug page. They are kept in
+    /// the preferences of the native side: the Dart side stores its own ones in
+    /// a place the platform cannot read.
+    private const val PREFERENCES = "course_live_update"
+    private const val BADGE_STYLE_KEY = "badge_style"
     private const val BADGE_STYLE_INITIAL = 0
     private const val BADGE_STYLE_SHORT = 1
-    private const val BADGE_STYLE_NONE = 2
+    private const val BADGE_STYLE_SQUARE = 2
+    private const val BADGE_STYLE_NONE = 3
+
+    /// Remembers how the badge of the course should look.
+    fun setBadgeStyle(context: Context, style: Int) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(BADGE_STYLE_KEY, style.coerceIn(0, BADGE_STYLE_NONE))
+            .apply()
+    }
 
     val isSupported: Boolean
         get() = Build.VERSION.SDK_INT >= LIVE_UPDATE_API_LEVEL
@@ -155,35 +165,30 @@ object CourseLiveUpdateManager {
             // Note: setColorized(true) must *not* be used, a colorized
             // notification is not eligible for promotion.
 
-        // The badge of the course is optional: it can be turned off, or made to
-        // show two characters, from the debug page.
-        val badgeCharacters = badgeCharacters(context)
-        if (badgeCharacters > 0) {
-            builder.setLargeIcon(courseBadge(context, event, badgeCharacters))
+        // The badge of the course is optional: the debug page switches between
+        // one character, the short name, a rounded square and no badge at all.
+        val badge = badgeStyle(context)
+        if (badge != BADGE_STYLE_NONE) {
+            builder.setLargeIcon(
+                courseBadge(
+                    context = context,
+                    event = event,
+                    characters = if (badge == BADGE_STYLE_SHORT) 2 else 1,
+                    rounded = badge == BADGE_STYLE_SQUARE,
+                ),
+            )
         }
 
         return builder.build()
     }
 
-    /// How many characters the badge of the course shows, zero for no badge.
-    ///
-    /// The value is written by the debug page, so that the looks can be
-    /// compared without building the app again.
-    private fun badgeCharacters(context: Context): Int {
-        val style = context
-            .getSharedPreferences(FLUTTER_PREFERENCES, Context.MODE_PRIVATE)
-            .getLong("flutter.$BADGE_STYLE_PREFERENCE", BADGE_STYLE_INITIAL.toLong())
-            .toInt()
+    /// Which badge the card shows, one of the `BADGE_STYLE_` values.
+    private fun badgeStyle(context: Context): Int =
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .getInt(BADGE_STYLE_KEY, BADGE_STYLE_INITIAL)
 
-        return when (style) {
-            BADGE_STYLE_SHORT -> 2
-            BADGE_STYLE_NONE -> 0
-            else -> 1
-        }
-    }
-
-    /// The mark of the course: a circle in the colour of its card with the
-    /// beginning of its name.
+    /// The mark of the course: a circle (or a rounded square) in the colour of
+    /// its card with the beginning of its name.
     ///
     /// It is the only place where the course is drawn inside the card; the left
     /// icon stays the app itself.
@@ -191,13 +196,27 @@ object CourseLiveUpdateManager {
         context: Context,
         event: CourseLiveUpdateEvent,
         characters: Int,
+        rounded: Boolean = false,
     ): Icon {
         val size = dp(context, 48)
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
         val background = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = event.color }
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f, background)
+        if (rounded) {
+            val corner = size * 0.24f
+            canvas.drawRoundRect(
+                0f,
+                0f,
+                size.toFloat(),
+                size.toFloat(),
+                corner,
+                corner,
+                background,
+            )
+        } else {
+            canvas.drawCircle(size / 2f, size / 2f, size / 2f, background)
+        }
 
         val label = (event.shortTitle.ifEmpty { event.title }).take(characters)
         if (label.isNotEmpty()) {
@@ -310,6 +329,7 @@ object CourseLiveUpdateManager {
             "promotableCharacteristics" to hasPromotableCharacteristics(context),
             "promoted" to isPromoted(context),
             "channelImportance" to (channel?.importance ?: -1),
+            "badgeStyle" to badgeStyle(context),
         )
     }
 

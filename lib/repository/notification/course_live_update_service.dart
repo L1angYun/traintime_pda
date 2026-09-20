@@ -100,6 +100,32 @@ class CourseLiveUpdateEvent {
   };
 }
 
+/// 岛上的课程徽标样式。
+///
+/// The order is the one of the platform side, so do not shuffle it.
+enum CourseLiveUpdateBadgeStyle {
+  /// 首字，比如「程」。
+  initial("首字"),
+
+  /// 简称，比如「程序」。
+  short("简称"),
+
+  /// 方形圆角，配首字。
+  square("方形"),
+
+  /// 不要徽标，只留标题。
+  none("不显示");
+
+  const CourseLiveUpdateBadgeStyle(this.label);
+
+  final String label;
+
+  static CourseLiveUpdateBadgeStyle fromIndex(Object? index) {
+    final value = index is int ? index : 0;
+    return value >= 0 && value < values.length ? values[value] : initial;
+  }
+}
+
 /// Pushes the upcoming classes to the platform, which shows the ongoing one as
 /// a Live Update / Live Activity.
 class CourseLiveUpdateService {
@@ -182,6 +208,25 @@ class CourseLiveUpdateService {
       await _channel.invokeMethod("cancelAll");
     } catch (e, stackTrace) {
       log.error("[CourseLiveUpdate] Failed to cancel", e, stackTrace);
+    }
+  }
+
+  /// 换一种课程徽标。
+  ///
+  /// The badge is drawn by the platform, so the choice is kept there instead of
+  /// in the preferences of the app: it has to be readable while the app is not
+  /// running. 它只在 Android 上有意义。
+  Future<void> setBadgeStyle(CourseLiveUpdateBadgeStyle style) async {
+    if (!Platform.isAndroid || !await isSupported()) {
+      return;
+    }
+
+    try {
+      await _androidChannel.invokeMethod("setBadgeStyle", {
+        "style": style.index,
+      });
+    } catch (e) {
+      log.warning("[CourseLiveUpdate] Unable to set the badge: $e");
     }
   }
 

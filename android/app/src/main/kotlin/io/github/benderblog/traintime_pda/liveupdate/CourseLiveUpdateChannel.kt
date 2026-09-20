@@ -43,6 +43,12 @@ object CourseLiveUpdateChannel {
 
                     "diagnostics" -> result.success(CourseLiveUpdateManager.diagnostics(context))
 
+                    "setBadgeStyle" -> {
+                        val style = (call.argument<Any?>("style") as? Number)?.toInt() ?: 0
+                        CourseLiveUpdateManager.setBadgeStyle(context, style)
+                        result.success(null)
+                    }
+
                     "openNotificationSettings" -> {
                         CourseLiveUpdateManager.openNotificationSettings(context)
                         result.success(null)
