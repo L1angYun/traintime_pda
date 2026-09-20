@@ -50,9 +50,16 @@ object CourseLiveUpdateScheduler {
             .take(MAX_EVENTS)
 
         var index = 0
+
+        /// The end of the last class which was planned, so that a class never
+        /// takes the island away from the class before it: a lead of twenty
+        /// minutes would otherwise put the next class up in the middle of the
+        /// ongoing one whenever the break is shorter than that.
+        var previousEnd = 0L
+
         for (event in planned) {
             val offset = index * ALARMS_PER_EVENT
-            val showAt = event.startMillis - lead
+            val showAt = maxOf(event.startMillis - lead, previousEnd)
             if (showAt > now) {
                 setAlarm(context, event, ACTION_START, showAt, offset)
             } else {
@@ -73,6 +80,7 @@ object CourseLiveUpdateScheduler {
                 setAlarm(context, event, ACTION_UPDATE, middle, offset + 2)
             }
             setAlarm(context, event, ACTION_STOP, event.endMillis, offset + 3)
+            previousEnd = maxOf(previousEnd, event.endMillis)
             index++
         }
 

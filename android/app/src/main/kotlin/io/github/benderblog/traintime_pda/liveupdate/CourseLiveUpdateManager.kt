@@ -46,8 +46,12 @@ object CourseLiveUpdateManager {
     private const val BADGE_STYLE_NONE = 3
 
     /// How long before a class starts its Live Update shows up.
+    ///
+    /// Twenty minutes is the time it takes to walk to the classroom, so the
+    /// island is a reminder on its own even for someone who does not look at the
+    /// notifications of the app.
     private const val LEAD_MINUTES_KEY = "lead_minutes"
-    private const val DEFAULT_LEAD_MINUTES = 5
+    private const val DEFAULT_LEAD_MINUTES = 20
 
     /// Remembers how the badge of the course should look.
     fun setBadgeStyle(context: Context, style: Int) {

@@ -25,6 +25,9 @@ class CourseLiveUpdateDebugCard extends StatefulWidget {
 /// 可以选的提前量(分钟),0 表示上课时才出现。
 const kLiveUpdateLeadMinuteOptions = [0, 3, 5, 10, 15, 20, 30];
 
+/// 平台侧的默认提前量。
+const kDefaultLiveUpdateLeadMinutes = 20;
+
 class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
   bool _isSupported = false;
   bool _hasNotificationPermission = false;
@@ -40,7 +43,7 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
   CourseLiveUpdateBadgeStyle _badgeStyle = CourseLiveUpdateBadgeStyle.none;
 
   /// 上课前多久上岛(分钟),同样由平台侧保存。
-  int _leadMinutes = 5;
+  int _leadMinutes = kDefaultLiveUpdateLeadMinutes;
 
   @override
   void initState() {
@@ -77,8 +80,11 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
       _badgeStyle = CourseLiveUpdateBadgeStyle.fromIndex(
         diagnostics["badgeStyle"],
       );
-      final lead = (diagnostics["leadMinutes"] as int?) ?? 5;
-      _leadMinutes = kLiveUpdateLeadMinuteOptions.contains(lead) ? lead : 5;
+      final lead =
+          (diagnostics["leadMinutes"] as int?) ?? kDefaultLiveUpdateLeadMinutes;
+      _leadMinutes = kLiveUpdateLeadMinuteOptions.contains(lead)
+          ? lead
+          : kDefaultLiveUpdateLeadMinutes;
       _upcoming = supported
           ? service.collectEvents(daysToSchedule: 1)
           : const [];
