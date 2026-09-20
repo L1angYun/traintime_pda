@@ -267,17 +267,18 @@ class _EmptyClassroomSearchWindowState
   /// One of the little boxes of a classroom: the number of the period, filled
   /// when the classroom is taken then.
   ///
-  /// The period of "now" is drawn in another colour, so that the column which is
-  /// going on can be found without counting.
+  /// The period which is going on is marked with a plain ring rather than with a
+  /// colour of its own: the colour of a box already says whether the classroom is
+  /// taken or free, and a third colour next to them only fights with them.
   Widget getIcon(bool isUsed, {int? index, bool isNow = false}) {
     final scheme = Theme.of(context).colorScheme;
-    final mark = isNow ? scheme.tertiary : scheme.primary;
+    final border = isNow ? scheme.onSurface : scheme.primary;
 
     return Container(
       width: 20,
       height: 20,
       decoration: BoxDecoration(
-        color: isUsed ? mark : Colors.transparent,
+        color: isUsed ? scheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
       ),
       child: index != null
@@ -287,13 +288,13 @@ class _EmptyClassroomSearchWindowState
                 fontWeight: isNow ? FontWeight.bold : FontWeight.w500,
                 fontSize: 14,
                 color: isUsed
-                    ? (isNow ? scheme.onTertiary : scheme.onPrimary)
-                    : mark,
+                    ? scheme.onPrimary
+                    : (isNow ? scheme.onSurface : scheme.primary),
               ),
             ).center()
           : null,
     ).decorated(
-      border: Border.all(width: isNow ? 2 : 1, color: mark),
+      border: Border.all(width: isNow ? 2 : 1, color: border),
       borderRadius: BorderRadius.circular(6),
     );
   }
