@@ -379,6 +379,16 @@ class _CourseLiveUpdateDebugCardState extends State<CourseLiveUpdateDebugCard> {
                   onSelectionChanged: (values) => _setBadgeStyle(values.first),
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                _badgeStyle == CourseLiveUpdateBadgeStyle.none
+                    ? "展开的通知不画徽标；折叠的小胶囊里写完整的课程简称。"
+                    : "展开的通知右侧画徽标，折叠的小胶囊里写同样的字。",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
             const SizedBox(height: 12),
 

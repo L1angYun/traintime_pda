@@ -225,11 +225,17 @@ object CourseLiveUpdateManager {
                 },
             )
 
+        // The badge of the course is optional: the debug page switches between
+        // one character, the short name, a rounded square and no badge at all.
+        // The chip of the collapsed island is set from it as well, so that both
+        // ends of the notification talk about the course the same way.
+        val badge = badgeStyle(context)
+
         val builder = Notification.Builder(context, CHANNEL_ID)
-            // The left icon is the app itself, the course is represented by the
-            // badge on the right: showing the course twice, once on each side,
-            // only makes the card look busy.
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            // The left icon stands for the lesson, not for the app: the app is
+            // the only one posting an ongoing class, while the notification has
+            // to say "class" at a glance where the course name does not fit.
+            .setSmallIcon(R.drawable.ic_course_live_update)
             .setContentTitle(event.title)
             .setContentText(event.detailText)
             .setSubText(event.footnoteText(now))
@@ -244,20 +250,16 @@ object CourseLiveUpdateManager {
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setStyle(style)
-            // What the collapsed island and the status bar chip show: only a
-            // couple of characters fit there, so the short name is used.
-            .setShortCriticalText(
-                event.shortTitle.ifEmpty { event.title },
-            )
+            // What the collapsed island and the status bar chip show. The chip is
+            // drawn by the system, which makes its text big and bold: it carries
+            // the course, since that is the one thing worth reading there.
+            .setShortCriticalText(chipLabel(event, badge))
             // This is the bit which asks the system to promote the notification
             // into a Live Update.
             .setRequestPromotedOngoing(true)
             // Note: setColorized(true) must *not* be used, a colorized
             // notification is not eligible for promotion.
 
-        // The badge of the course is optional: the debug page switches between
-        // one character, the short name, a rounded square and no badge at all.
-        val badge = badgeStyle(context)
         if (badge != BADGE_STYLE_NONE) {
             builder.setLargeIcon(
                 courseBadge(
@@ -270,6 +272,24 @@ object CourseLiveUpdateManager {
         }
 
         return builder.build()
+    }
+
+    /// The text of the chip of the collapsed island.
+    ///
+    /// It is as short as the badge when a badge is drawn (one character, or two
+    /// for the short name) and the whole short name when the card has no badge to
+    /// compare with. Names without Chinese characters are kept whole, a single
+    /// letter would not say which class it is.
+    private fun chipLabel(event: CourseLiveUpdateEvent, badge: Int): String {
+        val name = event.shortTitle.ifEmpty { event.title }
+        val characters = when (badge) {
+            BADGE_STYLE_SHORT -> 2
+            BADGE_STYLE_NONE -> return name
+            else -> 1
+        }
+
+        val isChinese = name.any { it.code in 0x4E00..0x9FFF }
+        return if (isChinese) name.take(characters) else name
     }
 
     /// Which badge the card shows, one of the `BADGE_STYLE_` values.
