@@ -66,20 +66,35 @@ struct CourseLiveActivityWidget: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(context.state.name).lineLimit(1)
-                            if !context.state.periodText.isEmpty {
-                                Text(context.state.periodText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    } icon: {
-                        CourseActivityBadge(state: context.state)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(CourseActivityColor.of(context.state.colorHex))
+                    /// The name alone, without the badge.
+                    ///
+                    /// The badge would only repeat the name which is written
+                    /// out right next to it - the Android side defaults to no
+                    /// badge for the same reason - and in this region it is
+                    /// drawn as a blob with its top right corner bitten off,
+                    /// whether it is wrapped in a `Label` or laid out by hand,
+                    /// while the very same badge is a clean rounded square in
+                    /// the collapsed island. The collapsed island, which has
+                    /// room for a couple of characters and nothing else, keeps
+                    /// it.
+                    ///
+                    /// One line only: measured with the class period on a line
+                    /// of its own, the panel grew six points where a line is
+                    /// worth twenty one, and the system took the missing line
+                    /// out of the bottom of the panel, cutting the last row in
+                    /// half. The period sits next to the time below instead,
+                    /// where there is room for it.
+                    Text(context.state.name)
+                        .font(.caption)
+                        .lineLimit(1)
+                        /// This region masks its content a couple of points in
+                        /// from its own leading edge - the same mask that took
+                        /// the corner off the badge when the badge lived here -
+                        /// and it cuts the first character of the name by about
+                        /// two points. A four point inset was not enough to
+                        /// clear it, so the name is given a wider berth.
+                        .padding(.leading, 10)
+                        .foregroundStyle(CourseActivityColor.of(context.state.colorHex))
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -120,7 +135,16 @@ private struct CourseActivityBadge: View {
 
     var body: some View {
         Text(label)
-            .font(.system(size: 11, weight: .semibold))
+            /// Two Chinese characters measure 21.9 points at 11, which is wider
+            /// than the badge: the text could only be made to fit by shrinking
+            /// it to the very edge, where the ink of the outer strokes was
+            /// shaved off, or by insetting it, which came out as a badge with a
+            /// corner bitten out of it. Nine points leaves about a point of
+            /// colour on either side without asking the layout for anything.
+            .font(.system(size: 9, weight: .semibold))
+            .lineLimit(1)
+            /// A safety net for the long single words of a Latin course name.
+            .minimumScaleFactor(0.8)
             .foregroundStyle(.white)
             .frame(width: 20, height: 20)
             .background(
@@ -166,9 +190,10 @@ private struct CourseActivityProgress: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Text(state.timeText.isEmpty ? timeRange : state.timeText)
+                Text(headline)
                     .font(.caption2)
                     .monospacedDigit()
+                    .lineLimit(1)
 
                 Spacer(minLength: 4)
 
@@ -185,6 +210,15 @@ private struct CourseActivityProgress: View {
                 countsDown: false
             )
             .tint(CourseActivityColor.of(state.colorHex))
+            /// A progress view built from a timer carries a label with the time
+            /// left in it. That label is a line of its own, and the island has
+            /// no room for it: it pushed the footnote out of the expanded
+            /// island, where the system cut it in half. The countdown is
+            /// already shown next to the course, so the label goes.
+            .labelsHidden()
+            /// Its own height is not a number the layout can count on, so the
+            /// bar is pinned to one: what it reports and what it draws agree.
+            .frame(height: 4)
 
             if !footnote.isEmpty {
                 Text(footnote)
@@ -193,6 +227,24 @@ private struct CourseActivityProgress: View {
                     .foregroundStyle(.secondary)
             }
         }
+        /// The expanded island draws its panel a few points shorter than the
+        /// content it was given - measured by taking a line away and watching
+        /// the panel follow, only ever a few points short - which left the
+        /// bottom half of this last line outside the panel. Asking the slack
+        /// back here gives the line its room again. The lock screen, which
+        /// shares this view, simply gets a little more air under the bar.
+        .padding(.bottom, 8)
+    }
+
+    /// The line above the bar: which periods the class takes, and when it runs.
+    ///
+    /// The island shows the period here rather than under the name, so that the
+    /// name and the countdown each stay on one line. Nothing is dropped: the
+    /// period, the time and the room are all still on the card.
+    private var headline: String {
+        [state.periodText, state.timeText.isEmpty ? timeRange : state.timeText]
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
     }
 
     /// The line under the bar.
