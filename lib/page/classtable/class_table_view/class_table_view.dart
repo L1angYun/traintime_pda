@@ -183,46 +183,49 @@ class _ClassTableViewState extends State<ClassTableView> {
           indexOfChar = index - 2;
         }
 
+        /// 每一节的上下课时间贴着这一格的上下边，节次写在中间。
+        ///
+        /// 三行都挤在格子中间时，当前时间线落在格子的哪一段是看不出来的 ——
+        /// 它压在中间那几行字上，很容易被读成压在两个节次的分界上。贴着边写，
+        /// 线夹在哪两条时间之间，就是哪一节。
+        final Widget cell;
+        if (indexOfChar == -1 || indexOfChar == -2) {
+          cell = Text(
+            FlutterI18n.translate(
+              context,
+              indexOfChar == -1
+                  ? "classtable.noon_break"
+                  : "classtable.supper_break",
+            ),
+            style: const TextStyle(fontSize: 12),
+            textAlign: TextAlign.center,
+          ).center();
+        } else {
+          cell = Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                timeList[indexOfChar * 2],
+                style: const TextStyle(fontSize: 8),
+                textAlign: TextAlign.center,
+              ),
+              Text("${indexOfChar + 1}", textAlign: TextAlign.center),
+              Text(
+                timeList[indexOfChar * 2 + 1],
+                style: const TextStyle(fontSize: 8),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          );
+        }
+
         return DefaultTextStyle.merge(
           style: TextStyle(
             fontSize: 14,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          child: Text.rich(
-            TextSpan(
-              children: [
-                if (indexOfChar == -1)
-                  TextSpan(
-                    text: FlutterI18n.translate(
-                      context,
-                      "classtable.noon_break",
-                    ),
-                    style: const TextStyle(fontSize: 12),
-                  )
-                else if (indexOfChar == -2)
-                  TextSpan(
-                    text: FlutterI18n.translate(
-                      context,
-                      "classtable.supper_break",
-                    ),
-                    style: const TextStyle(fontSize: 12),
-                  )
-                else ...[
-                  TextSpan(text: "${indexOfChar + 1}\n"),
-                  TextSpan(
-                    text: "${timeList[indexOfChar * 2]}\n",
-                    style: const TextStyle(fontSize: 8),
-                  ),
-                  TextSpan(
-                    text: timeList[indexOfChar * 2 + 1],
-                    style: const TextStyle(fontSize: 8),
-                  ),
-                ],
-              ],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ).center().constrained(width: leftRow, height: height);
+          child: SizedBox(width: leftRow, height: height, child: cell),
+        );
       });
     }
   }
