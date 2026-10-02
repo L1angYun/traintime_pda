@@ -1016,41 +1016,39 @@ class _CardEntrance extends StatefulWidget {
   const _CardEntrance({required this.index, required this.child});
   final int index;
   final Widget child;
+
   @override
   State<_CardEntrance> createState() => _CardEntranceState();
 }
 
-class _CardEntranceState extends State<_CardEntrance>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 260),
-  );
+class _CardEntranceState extends State<_CardEntrance> {
+  bool _started = false;
+
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(Duration(milliseconds: widget.index * 40), () {
-      if (mounted) _controller.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _started = true);
     });
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => FadeTransition(
-    opacity: CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    child: SlideTransition(
-      position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
-          .animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-          ),
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
+    final delay = widget.index * 40;
+    final total = delay + 260;
+    // Submit a visible first frame before starting the staggered entrance.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: _started ? 1 : 0),
+      duration: Duration(milliseconds: total),
+      curve: Interval(delay / total, 1, curve: Curves.easeOutCubic),
       child: widget.child,
-    ),
-  );
+      builder: (context, value, child) => Transform.translate(
+        offset: Offset(0, 12 * (1 - value)),
+        child: child,
+      ),
+    );
+  }
 }
 
 class _DirectionalTemperature extends StatefulWidget {
