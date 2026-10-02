@@ -75,13 +75,24 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
 
     try {
       final state = await _controller.session.getDeviceState(imei);
-      if (!mounted || imei != _controller.imeiSignal.value) return;
+      if (!mounted) return;
+      if (imei != _controller.imeiSignal.value) {
+        setState(() {
+          _isFetching = false;
+          _pendingMatches = null;
+        });
+        return;
+      }
 
       final matches = _pendingMatches;
       if (matches != null && !matches(state)) {
         setState(() {
           _error = const AirconResponseException("设备状态仍未确认");
           _isFetching = false;
+
+          /// 这一趟没对上，得把待确认的条件放掉，不然页面会一直卡在
+          /// "正在执行"，所有控件都点不动。
+          _pendingMatches = null;
         });
         return;
       }
@@ -133,7 +144,14 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
 
       for (var attempt = 0; attempt < _pollAttempts; attempt++) {
         if (attempt > 0) await Future<void>.delayed(_pollInterval);
-        if (!mounted || imei != _controller.imeiSignal.value) return;
+        if (!mounted) return;
+        if (imei != _controller.imeiSignal.value) {
+          setState(() {
+            _isFetching = false;
+            _pendingMatches = null;
+          });
+          return;
+        }
 
         try {
           final state = await _controller.session.getDeviceState(imei);
@@ -146,7 +164,14 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
         }
       }
 
-      if (!mounted || imei != _controller.imeiSignal.value) return;
+      if (!mounted) return;
+      if (imei != _controller.imeiSignal.value) {
+        setState(() {
+          _isFetching = false;
+          _pendingMatches = null;
+        });
+        return;
+      }
       if (confirmedState == null) {
         throw pollError ?? const AirconResponseException("设备状态未确认");
       }
@@ -163,13 +188,24 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
         msg: FlutterI18n.translate(context, "electricity.aircon_command_ok"),
       );
     } catch (error) {
-      if (!mounted || imei != _controller.imeiSignal.value) return;
+      if (!mounted) return;
+      if (imei != _controller.imeiSignal.value) {
+        setState(() {
+          _isFetching = false;
+          _pendingMatches = null;
+        });
+        return;
+      }
       setState(() {
         _error = error;
         _isFetching = false;
+
+        /// 指令已经发出去的话，设备那边可能真的动了，所以乐观状态留着，
+        /// 但"待确认"的条件必须放掉 —— 否则页面会一直卡在"正在执行"，
+        /// 所有控件都点不动。
+        _pendingMatches = null;
         if (!commandSent) {
           _state = previous;
-          _pendingMatches = null;
         }
       });
       showToast(context: context, msg: error.toString());
@@ -393,9 +429,9 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
               ),
               ListView(
                 padding: EdgeInsets.fromLTRB(
-                  20,
-                  MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
-                  20,
+                  16,
+                  MediaQuery.paddingOf(context).top + kToolbarHeight + 4,
+                  16,
                   28,
                 ),
                 children: [
@@ -457,7 +493,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                     "${state.targetTemperature}",
                     key: ValueKey(state.targetTemperature),
                     style: textTheme.displayLarge?.copyWith(
-                      fontSize: 104,
+                      fontSize: 92,
                       height: 1,
                       fontWeight: FontWeight.w600,
                     ),
@@ -969,16 +1005,16 @@ class _MiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final content = Padding(
-      padding: padding ?? const EdgeInsets.all(18),
+      padding: padding ?? const EdgeInsets.all(16),
       child: child,
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -992,7 +1028,7 @@ class _MiCard extends StatelessWidget {
             : Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(18),
                   onTap: onTap,
                   child: content,
                 ),
