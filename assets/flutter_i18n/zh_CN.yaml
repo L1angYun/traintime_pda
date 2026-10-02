@@ -1,4 +1,4 @@
-drag_text: 上拉获取更多数据
+﻿drag_text: 上拉获取更多数据
 ready_text: 正在加载......
 processing_text: 正在处理......
 processed_text: 请求成功
@@ -336,6 +336,7 @@ electricity:
   aircon_target_temperature: 设定温度
   aircon_temperature_range: 温度必须在 18–32 ℃ 之间
   aircon_indoor_temperature: "室内温度：{temperature} ℃"
+  aircon_indoor: 室内温度
   aircon_mode: 运行模式
   aircon_mode_fan: 送风
   aircon_mode_heat: 制热

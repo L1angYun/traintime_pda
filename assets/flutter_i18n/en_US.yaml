@@ -1,4 +1,4 @@
-drag_text: Pull to request more
+﻿drag_text: Pull to request more
 ready_text: Loading...
 processing_text: Processing...
 processed_text: Successfully requested
@@ -378,6 +378,7 @@ electricity:
   aircon_target_temperature: Target temperature
   aircon_temperature_range: Temperature must be between 18 and 32 ℃
   aircon_indoor_temperature: "Indoor temperature: {temperature} ℃"
+  aircon_indoor: Indoor
   aircon_mode: Mode
   aircon_mode_fan: Fan
   aircon_mode_heat: Heat

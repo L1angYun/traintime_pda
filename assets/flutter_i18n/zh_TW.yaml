@@ -1,4 +1,4 @@
-# Translated using OpenCC s2twp Dictionary, script by Hancl777
+﻿# Translated using OpenCC s2twp Dictionary, script by Hancl777
 drag_text: 上拉獲取更多數據
 ready_text: 正在加載......
 processing_text: 正在處理......
@@ -335,6 +335,7 @@ electricity:
   aircon_target_temperature: 設定溫度
   aircon_temperature_range: 溫度必須在 18–32 ℃ 之間
   aircon_indoor_temperature: 室內溫度：{temperature} ℃
+  aircon_indoor: 室內溫度
   aircon_mode: 運行模式
   aircon_mode_fan: 送風
   aircon_mode_heat: 制熱
