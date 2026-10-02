@@ -20,8 +20,8 @@ import 'package:watermeter/page/setting/dialogs/aircon_imei_dialog.dart';
 import 'package:watermeter/repository/miscellaneous_session/aircon_session.dart';
 
 /// 米家那套蓝色与橙色。
-const _miBlue = Color(0xFF2F6BE4);
-const _miOrange = Color(0xFFFF6A00);
+const _miBlue = Color(0xFF2F73EA);
+const _miOrange = Color(0xFFFF6B3D);
 
 /// 温度的可调范围，和设备本身一致。
 const _minTemperature = 18;
@@ -328,14 +328,14 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   /// 顶上那层渐变跟着运行模式走，开关机时也会淡下去，和米家一样。
   List<Color> _gradientColors(AirconState? state) {
     if (state == null || !state.isOn) {
-      return const [Color(0xFFE8EDF5), Color(0xFFF7F9FC)];
+      return const [Color(0xFFF0F3F8), Color(0xFFF9FAFC)];
     }
     return switch (state.mode) {
-      AirconMode.cool => const [Color(0xFF9CC3F7), Color(0xFFE8F1FC)],
-      AirconMode.heat => const [Color(0xFFFFC79E), Color(0xFFFFEFE3)],
-      AirconMode.dry => const [Color(0xFF9FDCDF), Color(0xFFE4F4F5)],
-      AirconMode.fan => const [Color(0xFFC6D0DC), Color(0xFFEDF1F6)],
-      AirconMode.auto => const [Color(0xFFA8E2CE), Color(0xFFE6F6F0)],
+      AirconMode.cool => const [Color(0xFFC4D9F4), Color(0xFFF6F9FD)],
+      AirconMode.heat => const [Color(0xFFF9DACA), Color(0xFFFDF6F0)],
+      AirconMode.dry => const [Color(0xFFCDE6E6), Color(0xFFF4FAFA)],
+      AirconMode.fan => const [Color(0xFFDEE5ED), Color(0xFFF6F8FB)],
+      AirconMode.auto => const [Color(0xFFD5EDE2), Color(0xFFF5FBF8)],
     };
   }
 
@@ -430,21 +430,43 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
               ListView(
                 padding: EdgeInsets.fromLTRB(
                   16,
-                  MediaQuery.paddingOf(context).top + kToolbarHeight + 4,
+                  MediaQuery.paddingOf(context).top + kToolbarHeight + 12,
                   16,
-                  28,
+                  32,
                 ),
                 children: [
-                  _hero(context, state),
-                  if (_error != null) _errorCard(context, _error!),
+                  _CardEntrance(index: 0, child: _hero(context, state)),
+                  if (_error != null)
+                    _CardEntrance(
+                      index: 1,
+                      child: _errorCard(context, _error!),
+                    ),
                   const SizedBox(height: 4),
-                  _energyCard(context),
-                  _powerCard(context, state, busy),
-                  _temperatureCard(context, state, busy),
-                  _windCard(context, state, busy),
-                  _swingCard(context, state, busy),
-                  _otherCard(context, state, busy),
-                  _modeCard(context, state, busy),
+                  _CardEntrance(index: 2, child: _energyCard(context)),
+                  _CardEntrance(
+                    index: 3,
+                    child: _powerCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 4,
+                    child: _temperatureCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 5,
+                    child: _windCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 6,
+                    child: _swingCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 7,
+                    child: _otherCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 8,
+                    child: _modeCard(context, state, busy),
+                  ),
                 ],
               ),
               if (busy)
@@ -465,51 +487,51 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   Widget _hero(BuildContext context, AirconState state) {
     final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         children: [
-          if (!state.isOn)
-            Text(
-              FlutterI18n.translate(context, "electricity.aircon_power"),
-              style: textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            )
-          else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 320),
-                  transitionBuilder: (child, animation) => SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.35),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: FadeTransition(opacity: animation, child: child),
-                  ),
-                  child: Text(
-                    "${state.targetTemperature}",
-                    key: ValueKey(state.targetTemperature),
-                    style: textTheme.displayLarge?.copyWith(
-                      fontSize: 92,
-                      height: 1,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 10, left: 2),
-                  child: Text(
-                    "℃",
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 360),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => SizeTransition(
+              sizeFactor: animation,
+              alignment: Alignment.topCenter,
+              child: FadeTransition(opacity: animation, child: child),
             ),
+            child: !state.isOn
+                ? Text(
+                    FlutterI18n.translate(context, "electricity.aircon_power"),
+                    key: const ValueKey("off"),
+                    style: textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                : Row(
+                    key: const ValueKey("on"),
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _DirectionalTemperature(
+                        value: state.targetTemperature,
+                        style: textTheme.displayLarge?.copyWith(
+                          fontSize: 92,
+                          height: 1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10, left: 2),
+                        child: Text(
+                          "℃",
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
           const SizedBox(height: 6),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 260),
@@ -662,12 +684,12 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   /// 电源：一个圆钮，按下去会缩一下。
   Widget _powerCard(BuildContext context, AirconState state, bool busy) {
     return _MiCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
           _RoundButton(
             icon: Icons.power_settings_new,
-            size: 56,
+            size: 64,
             selected: state.isOn,
             accent: state.isOn ? _miBlue : _miOrange,
             enabled: !busy,
@@ -733,7 +755,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   duration: const Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
                   builder: (context, value, _) => Container(
-                    height: 54,
+                    height: 58,
                     decoration: BoxDecoration(
                       color: scheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(27),
@@ -753,16 +775,13 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                           ),
                         ),
                         Center(
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            child: Text(
-                              "${state.targetTemperature}℃",
-                              key: ValueKey(state.targetTemperature),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                          child: _DirectionalTemperature(
+                            value: state.targetTemperature,
+                            suffix: "℃",
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -811,19 +830,20 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
+          _SlidingOptionRow(
+            items: [
               for (final speed in AirconWindSpeed.values)
-                Expanded(
-                  child: _OptionButton(
-                    letter: _windLetter(speed),
-                    label: FlutterI18n.translate(context, speed.labelKey),
-                    selected: state.windSpeed == speed && !state.strongMode,
-                    enabled: !busy,
-                    onTap: () => _setWindSpeed(state, speed),
-                  ),
+                _SlidingOptionItem(
+                  letter: _windLetter(speed),
+                  label: FlutterI18n.translate(context, speed.labelKey),
+                  selected: state.windSpeed == speed && !state.strongMode,
+                  onTap: () => _setWindSpeed(state, speed),
                 ),
             ],
+            selectedIndex: state.strongMode
+                ? -1
+                : AirconWindSpeed.values.indexOf(state.windSpeed),
+            enabled: !busy,
           ),
         ],
       ),
@@ -933,19 +953,18 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
+          _SlidingOptionRow(
+            items: [
               for (final mode in order)
-                Expanded(
-                  child: _OptionButton(
-                    icon: _modeIcon(mode),
-                    label: FlutterI18n.translate(context, mode.labelKey),
-                    selected: state.mode == mode,
-                    enabled: !busy,
-                    onTap: () => _setMode(state, mode),
-                  ),
+                _SlidingOptionItem(
+                  icon: _modeIcon(mode),
+                  label: FlutterI18n.translate(context, mode.labelKey),
+                  selected: state.mode == mode,
+                  onTap: () => _setMode(state, mode),
                 ),
             ],
+            selectedIndex: order.indexOf(state.mode),
+            enabled: !busy,
           ),
         ],
       ),
@@ -993,6 +1012,234 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   }
 }
 
+class _CardEntrance extends StatefulWidget {
+  const _CardEntrance({required this.index, required this.child});
+  final int index;
+  final Widget child;
+  @override
+  State<_CardEntrance> createState() => _CardEntranceState();
+}
+
+class _CardEntranceState extends State<_CardEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(Duration(milliseconds: widget.index * 40), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    child: SlideTransition(
+      position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
+          .animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+          ),
+      child: widget.child,
+    ),
+  );
+}
+
+class _DirectionalTemperature extends StatefulWidget {
+  const _DirectionalTemperature({
+    required this.value,
+    required this.style,
+    this.suffix = "",
+  });
+  final int value;
+  final TextStyle? style;
+  final String suffix;
+  @override
+  State<_DirectionalTemperature> createState() =>
+      _DirectionalTemperatureState();
+}
+
+class _DirectionalTemperatureState extends State<_DirectionalTemperature> {
+  late int _oldValue = widget.value;
+  @override
+  void didUpdateWidget(covariant _DirectionalTemperature oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) _oldValue = oldWidget.value;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final increasing = widget.value > _oldValue;
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        final childValue = (child.key as ValueKey<int>).value;
+        final incoming = childValue == widget.value;
+        final offset = increasing
+            ? (incoming ? const Offset(0, 1) : const Offset(0, -1))
+            : (incoming ? const Offset(0, -1) : const Offset(0, 1));
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween(begin: offset, end: Offset.zero).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: Text(
+        "${widget.value}${widget.suffix}",
+        key: ValueKey(widget.value),
+        style: widget.style,
+      ),
+    );
+  }
+}
+
+class _SlidingOptionItem {
+  const _SlidingOptionItem({
+    this.icon,
+    this.letter,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final IconData? icon;
+  final String? letter;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+}
+
+class _SlidingOptionRow extends StatelessWidget {
+  const _SlidingOptionRow({
+    required this.items,
+    required this.selectedIndex,
+    required this.enabled,
+  });
+  final List<_SlidingOptionItem> items;
+  final int selectedIndex;
+  final bool enabled;
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 84,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final slot = constraints.maxWidth / items.length;
+          return Stack(
+            children: [
+              if (selectedIndex >= 0)
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  left: selectedIndex * slot + (slot - 54) / 2,
+                  top: 0,
+                  width: 54,
+                  height: 54,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: _miBlue,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              for (var i = 0; i < items.length; i++)
+                Positioned(
+                  left: i * slot,
+                  width: slot,
+                  top: 0,
+                  child: _SlidingOptionCell(
+                    item: items[i],
+                    selected: i == selectedIndex,
+                    enabled: enabled,
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SlidingOptionCell extends StatefulWidget {
+  const _SlidingOptionCell({
+    required this.item,
+    required this.selected,
+    required this.enabled,
+  });
+  final _SlidingOptionItem item;
+  final bool selected;
+  final bool enabled;
+  @override
+  State<_SlidingOptionCell> createState() => _SlidingOptionCellState();
+}
+
+class _SlidingOptionCellState extends State<_SlidingOptionCell> {
+  bool _pressed = false;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = widget.selected
+        ? Colors.white
+        : (widget.enabled ? scheme.onSurfaceVariant : scheme.outline);
+    return GestureDetector(
+      onTap: widget.enabled ? widget.item.onTap : null,
+      onTapDown: widget.enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: widget.enabled ? (_) => setState(() => _pressed = false) : null,
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.9 : 1,
+        duration: const Duration(milliseconds: 120),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 54,
+              child: Center(
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 180),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  child: widget.item.letter != null
+                      ? Text(widget.item.letter!)
+                      : Icon(widget.item.icon, size: 24, color: color),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 12,
+                color: widget.selected ? _miBlue : scheme.onSurfaceVariant,
+                fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+              child: Text(
+                widget.item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 米家那种白卡片：大圆角、很淡的阴影。
 class _MiCard extends StatelessWidget {
   const _MiCard({required this.child, this.padding, this.onTap});
@@ -1005,16 +1252,18 @@ class _MiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final content = Padding(
-      padding: padding ?? const EdgeInsets.all(16),
+      padding: padding ?? const EdgeInsets.all(20),
       child: child,
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(18),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? scheme.surface
+              : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -1028,7 +1277,7 @@ class _MiCard extends StatelessWidget {
             : Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   onTap: onTap,
                   child: content,
                 ),
@@ -1042,18 +1291,15 @@ class _MiCard extends StatelessWidget {
 class _RoundButton extends StatefulWidget {
   const _RoundButton({
     this.icon,
-    this.letter,
     required this.selected,
     required this.accent,
     required this.onTap,
     this.enabled = true,
-    this.size = 52,
+    this.size = 56,
   });
 
   final IconData? icon;
 
-  /// 画一个字母而不是图标，风速那排用得上（A/S/L/M/H）。
-  final String? letter;
   final bool selected;
   final Color accent;
   final VoidCallback onTap;
@@ -1095,74 +1341,13 @@ class _RoundButtonState extends State<_RoundButton> {
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-          child: widget.letter != null
-              ? Center(
-                  child: Text(
-                    widget.letter!,
-                    style: TextStyle(
-                      fontSize: widget.size * 0.42,
-                      fontWeight: FontWeight.w600,
-                      color: foreground,
-                    ),
-                  ),
-                )
-              : Icon(
-                  widget.icon ?? Icons.circle,
-                  size: widget.size * 0.5,
-                  color: foreground,
-                ),
+          child: Icon(
+            widget.icon ?? Icons.circle,
+            size: widget.size * 0.5,
+            color: foreground,
+          ),
         ),
       ),
-    );
-  }
-}
-
-/// 图标/字母加一行文字的圆钮，风速和模式都用它。
-class _OptionButton extends StatelessWidget {
-  const _OptionButton({
-    this.icon,
-    this.letter,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.enabled = true,
-  });
-
-  final IconData? icon;
-  final String? letter;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final background = selected ? _miBlue : scheme.surfaceContainerHighest;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _RoundButton(
-          icon: icon,
-          letter: letter,
-          selected: selected,
-          accent: background,
-          enabled: enabled,
-          onTap: onTap,
-          size: 54,
-        ),
-        const SizedBox(height: 8),
-        AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
-          style: TextStyle(
-            fontSize: 12,
-            color: selected ? _miBlue : scheme.onSurfaceVariant,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          ),
-          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-      ],
     );
   }
 }
