@@ -295,11 +295,11 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
       return const [Color(0xFFE8EDF5), Color(0xFFF7F9FC)];
     }
     return switch (state.mode) {
-      AirconMode.cool => const [Color(0xFF7FB4F5), Color(0xFFD9E8FB)],
-      AirconMode.heat => const [Color(0xFFFFB27A), Color(0xFFFFE3D0)],
-      AirconMode.dry => const [Color(0xFF7FD2D6), Color(0xFFD8F0F1)],
-      AirconMode.fan => const [Color(0xFFB6C4D4), Color(0xFFE7ECF2)],
-      AirconMode.auto => const [Color(0xFF8FD8C0), Color(0xFFDCF2EA)],
+      AirconMode.cool => const [Color(0xFF9CC3F7), Color(0xFFE8F1FC)],
+      AirconMode.heat => const [Color(0xFFFFC79E), Color(0xFFFFEFE3)],
+      AirconMode.dry => const [Color(0xFF9FDCDF), Color(0xFFE4F4F5)],
+      AirconMode.fan => const [Color(0xFFC6D0DC), Color(0xFFEDF1F6)],
+      AirconMode.auto => const [Color(0xFFA8E2CE), Color(0xFFE6F6F0)],
     };
   }
 
@@ -393,9 +393,9 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
               ),
               ListView(
                 padding: EdgeInsets.fromLTRB(
-                  16,
+                  20,
                   MediaQuery.paddingOf(context).top + kToolbarHeight + 8,
-                  16,
+                  20,
                   28,
                 ),
                 children: [
@@ -406,7 +406,8 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   _powerCard(context, state, busy),
                   _temperatureCard(context, state, busy),
                   _windCard(context, state, busy),
-                  _switchCard(context, state, busy),
+                  _swingCard(context, state, busy),
+                  _otherCard(context, state, busy),
                   _modeCard(context, state, busy),
                 ],
               ),
@@ -428,7 +429,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   Widget _hero(BuildContext context, AirconState state) {
     final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
           if (!state.isOn)
@@ -456,7 +457,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                     "${state.targetTemperature}",
                     key: ValueKey(state.targetTemperature),
                     style: textTheme.displayLarge?.copyWith(
-                      fontSize: 88,
+                      fontSize: 104,
                       height: 1,
                       fontWeight: FontWeight.w600,
                     ),
@@ -630,7 +631,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
         children: [
           _RoundButton(
             icon: Icons.power_settings_new,
-            size: 46,
+            size: 56,
             selected: state.isOn,
             accent: state.isOn ? _miBlue : _miOrange,
             enabled: !busy,
@@ -696,10 +697,10 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   duration: const Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
                   builder: (context, value, _) => Container(
-                    height: 46,
+                    height: 54,
                     decoration: BoxDecoration(
                       color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(23),
+                      borderRadius: BorderRadius.circular(27),
                     ),
                     child: Stack(
                       children: [
@@ -711,7 +712,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                               color: state.isOn
                                   ? _miBlue
                                   : scheme.outlineVariant,
-                              borderRadius: BorderRadius.circular(23),
+                              borderRadius: BorderRadius.circular(27),
                             ),
                           ),
                         ),
@@ -801,8 +802,44 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
     AirconWindSpeed.high => "H",
   };
 
-  /// 扫风、强力、电辅热三个开关。
-  Widget _switchCard(BuildContext context, AirconState state, bool busy) {
+  /// 扫风：照米家做成一张单独的卡片，左边一个大圆钮、右边开关。
+  ///
+  /// 米家那张卡下面还有一个「风向」按钮，我们这台设备只提供上下扫风，
+  /// 没有左右风向的指令，就不摆一个按不动的按钮了。
+  Widget _swingCard(BuildContext context, AirconState state, bool busy) {
+    return _MiCard(
+      padding: const EdgeInsets.fromLTRB(18, 14, 12, 14),
+      child: Row(
+        children: [
+          _RoundButton(
+            icon: Icons.swap_vert,
+            selected: state.verticalSwing,
+            accent: _miBlue,
+            enabled: !busy,
+            size: 52,
+            onTap: () => _setVerticalSwing(state, !state.verticalSwing),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              FlutterI18n.translate(
+                context,
+                "electricity.aircon_vertical_swing",
+              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+          Switch(
+            value: state.verticalSwing,
+            onChanged: busy ? null : (value) => _setVerticalSwing(state, value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 强力模式和辅助电热：米家页面上没有，单独放一张卡，功能不丢。
+  Widget _otherCard(BuildContext context, AirconState state, bool busy) {
     Widget row({
       required IconData icon,
       required String key,
@@ -819,16 +856,9 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
     }
 
     return _MiCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
       child: Column(
         children: [
-          row(
-            icon: Icons.swap_vert,
-            key: "electricity.aircon_vertical_swing",
-            value: state.verticalSwing,
-            onChanged: (value) => _setVerticalSwing(state, value),
-          ),
-          const Divider(height: 1),
           row(
             icon: Icons.bolt_outlined,
             key: "electricity.aircon_strong_mode",
@@ -939,16 +969,16 @@ class _MiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final content = Padding(
-      padding: padding ?? const EdgeInsets.all(16),
+      padding: padding ?? const EdgeInsets.all(18),
       child: child,
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -962,7 +992,7 @@ class _MiCard extends StatelessWidget {
             : Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   onTap: onTap,
                   child: content,
                 ),
@@ -981,7 +1011,7 @@ class _RoundButton extends StatefulWidget {
     required this.accent,
     required this.onTap,
     this.enabled = true,
-    this.size = 44,
+    this.size = 52,
   });
 
   final IconData? icon;
@@ -1084,7 +1114,7 @@ class _OptionButton extends StatelessWidget {
           accent: background,
           enabled: enabled,
           onTap: onTap,
-          size: 46,
+          size: 54,
         ),
         const SizedBox(height: 8),
         AnimatedDefaultTextStyle(
