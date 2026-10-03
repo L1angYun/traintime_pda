@@ -4,6 +4,8 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
+
 import 'package:material_ui/material_ui.dart';
 
 const containerTransformForwardDuration = Duration(milliseconds: 420);
@@ -104,6 +106,82 @@ class _SinkDriverState extends State<_SinkDriver> {
 /// （卡片越长横向偏移越大）。参考里说的非线性是**时间曲线**，不是空间路径。
 class ContainerTransformRectTween extends RectTween {
   ContainerTransformRectTween({super.begin, super.end});
+}
+
+/// 动画期间用「目标的快照」代替真实页面绘制。
+///
+/// 真实页面始终留在树里（照常构建、布局、保持存活），只是当快照可用时
+/// 用 `Opacity(0)` 让它**不参与绘制**（Flutter 在 alpha 为 0 时会直接跳过绘制），
+/// 画面上由那张位图顶上。落地时把快照撤掉，露出来的就是已经建好的真实页面 ——
+/// 不重建、不闪、也不需要课表做任何配合。
+class _ContainerTransformSurface extends StatefulWidget {
+  const _ContainerTransformSurface({
+    required this.child,
+    required this.showSnapshot,
+  });
+
+  final Widget child;
+  final bool showSnapshot;
+
+  @override
+  State<_ContainerTransformSurface> createState() =>
+      _ContainerTransformSurfaceState();
+}
+
+class _ContainerTransformSurfaceState extends State<_ContainerTransformSurface> {
+  final GlobalKey _boundaryKey = GlobalKey();
+  ui.Image? _snapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    // 等真实页面画完第一帧再抓，不然抓到的可能是空的。
+    WidgetsBinding.instance.addPostFrameCallback((_) => _capture());
+  }
+
+  Future<void> _capture() async {
+    if (!mounted) return;
+    final boundary =
+        _boundaryKey.currentContext?.findRenderObject();
+    if (boundary is! RenderRepaintBoundary) return;
+    try {
+      final ratio = MediaQuery.devicePixelRatioOf(context).clamp(1.0, 2.0);
+      final image = await boundary.toImage(pixelRatio: ratio);
+      if (!mounted) {
+        image.dispose();
+        return;
+      }
+      setState(() {
+        _snapshot?.dispose();
+        _snapshot = image;
+      });
+    } catch (_) {
+      // 抓不到就继续画真实页面，最多是回到原来的表现。
+    }
+  }
+
+  @override
+  void dispose() {
+    _snapshot?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshot = _snapshot;
+    final useSnapshot = widget.showSnapshot && snapshot != null;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Opacity(
+          opacity: useSnapshot ? 0 : 1,
+          child: RepaintBoundary(key: _boundaryKey, child: widget.child),
+        ),
+        if (useSnapshot)
+          RawImage(image: snapshot, fit: BoxFit.fill),
+      ],
+    );
+  }
 }
 
 /// 「正在长大的窗口」：从控件的位置长到整屏，带圆角。
@@ -226,14 +304,18 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                     ),
                   ),
                   // 页面**等比铺满**正在长大的窗口（相当于 BoxFit.cover），
-                  // 但不用 FittedBox：矩形每帧都在变，FittedBox 的约束也就每帧在变，
-                  // 会把下面这棵重页面（课表几百个 widget）逼着**每帧重新布局**。
-                  // 这里改成：页面尺寸恒定（整屏，只布局一次），
-                  // 每帧只改变换矩阵与裁切矩形 —— 纯合成，不重排。
+                  // 但动画期间画的是它的**快照**，不是它本人。
+                  //
+                  // 为什么：课表这类重页面内部有 ImageFiltered(壁纸模糊)、MaskFilter.blur(面板阴影)
+                  // 和大量裁切，被外层「每帧变化的缩放 + 裁切」一折腾，栅格化缓存就用不上了，
+                  // 于是每帧都在重做滤镜 —— 实测很卡。快照方案把动画期间要画的东西
+                  // 压缩成**一张位图**：缩放与裁切都只作用在这张图上，必顺。
+                  // （页面本身仍然照常构建、布局、保持存活，只是动画期间不参与绘制；
+                  //   落地时把快照撤掉，露出来的就是已经建好的真实页面，无缝、不重建。）
                   Positioned.fill(
                     child: ClipPath(
                       clipper: _TransformWindowClipper(
-                        rect: rectTween.lerp(t)!,
+                        rect: window,
                         radius: BorderRadius.lerp(
                           startRadius,
                           endRadius,
@@ -250,7 +332,8 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                             1,
                           )
                           ..scaleByDouble(coverScale, coverScale, 1, 1),
-                        child: RepaintBoundary(
+                        child: _ContainerTransformSurface(
+                          showSnapshot: raw < 0.999,
                           child: ColoredBox(
                             color: Theme.of(context).scaffoldBackgroundColor,
                             child: page,
