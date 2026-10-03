@@ -171,6 +171,10 @@ PageRouteBuilder<T> containerTransformRoute<T>({
     reverseTransitionDuration: containerTransformReverseDuration,
     pageBuilder: (context, _, _) => builder(context),
     transitionsBuilder: (context, animation, _, child) {
+      // 没有来源卡片就直接放行：这个动效只属于「从首页卡片打开一个页面」。
+      // 之前不管从哪进来都硬跑一次，还会把首页的缩略图当作背景画出来 ——
+      // 从设置页打开「关于软件」时就露出了主页，明显不对。
+      if (!hasSource) return child;
       return LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.biggest;
