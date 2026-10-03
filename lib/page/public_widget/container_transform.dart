@@ -223,17 +223,25 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                       fit: StackFit.expand,
                       children: [
                         if (_backgroundThumb != null)
-                          ImageFiltered(
-                            // 小图上的 sigma；因为后面要放大 8 倍左右，
-                            // 视觉上相当于全屏图上十几的 sigma。
-                            imageFilter: ui.ImageFilter.blur(
-                              sigmaX: 1.6,
-                              sigmaY: 1.6,
-                            ),
-                            child: RawImage(
-                              image: _backgroundThumb,
-                              fit: BoxFit.cover,
-                              filterQuality: FilterQuality.low,
+                          // 模糊半径**跟着动画一起长大**（0 → 满）：
+                          // 恒定 sigma 会一开场就糊满，看着是「啪」的一下；
+                          // 从 0 开始长才是连续的糊起来。
+                          // 同时小图本身也淡入 —— t 很小时透出来的是真实首页，
+                          // 所以第一帧和首页完全一样，不会有任何跳变。
+                          Opacity(
+                            opacity: t.clamp(0.0, 1.0),
+                            child: ImageFiltered(
+                              // 小图上的 sigma；后面要放大 8 倍左右，
+                              // 视觉上相当于全屏图上十几的 sigma。
+                              imageFilter: ui.ImageFilter.blur(
+                                sigmaX: 1.8 * t,
+                                sigmaY: 1.8 * t,
+                              ),
+                              child: RawImage(
+                                image: _backgroundThumb,
+                                fit: BoxFit.cover,
+                                filterQuality: FilterQuality.low,
+                              ),
                             ),
                           ),
                         ColoredBox(

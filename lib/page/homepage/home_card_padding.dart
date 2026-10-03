@@ -16,7 +16,7 @@ extension HomeCardPadding on Widget {
     BuildContext context, {
     HomeCardType type = HomeCardType.plain,
     FutureOr<void> Function()? onPressed,
-    bool enableContainerTransform = true,
+    bool enableContainerTransform = false,
   }) {
     final cardShape = RoundedSuperellipseBorder(
       borderRadius: BorderRadius.circular(14),
