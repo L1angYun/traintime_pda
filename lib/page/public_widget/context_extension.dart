@@ -4,6 +4,7 @@
 
 import 'package:material_ui/material_ui.dart';
 import 'package:watermeter/repository/preference.dart';
+import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/routing/routes.dart';
 
 extension BuildContextExt on BuildContext {
@@ -22,20 +23,20 @@ extension BuildContextExt on BuildContext {
 
   Future<T?> push<T extends Object?>(Widget page) =>
       (splitViewKey.currentState ?? Navigator.of(this)).push(
-        MaterialPageRoute<T>(builder: (_) => page),
+        containerTransformRoute<T>(builder: (_) => page),
       );
 
   Future<T?> pushReplacement<T extends Object?>(Widget page) {
     _currentDetailRoute = null;
     if (splitViewKey.currentState != null) {
       return splitViewKey.currentState!.pushAndRemoveUntil(
-        MaterialPageRoute<T>(builder: (_) => page),
+        containerTransformRoute<T>(builder: (_) => page),
         (route) => route.isFirst && route.isActive,
       );
     } else {
       return Navigator.of(
         this,
-      ).pushReplacement(MaterialPageRoute<T>(builder: (_) => page));
+      ).pushReplacement(containerTransformRoute<T>(builder: (_) => page));
     }
   }
 
