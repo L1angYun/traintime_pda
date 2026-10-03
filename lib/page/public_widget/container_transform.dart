@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -99,6 +98,25 @@ class ContainerTransformRectTween extends RectTween {
   ContainerTransformRectTween({super.begin, super.end});
 }
 
+/// 「正在长大的窗口」：从控件的位置长到整屏，带圆角。
+///
+/// 页面本身固定按整屏摆放，只有这个窗口在动 —— 所以看到的是页面被"揭开"，
+/// 而不是页面被缩放或平移。
+class _TransformWindowClipper extends CustomClipper<Path> {
+  const _TransformWindowClipper({required this.rect, required this.radius});
+
+  final Rect rect;
+  final BorderRadius radius;
+
+  @override
+  Path getClip(Size size) =>
+      Path()..addRRect(RRect.fromRectAndRadius(rect, radius.topLeft));
+
+  @override
+  bool shouldReclip(_TransformWindowClipper oldClipper) =>
+      oldClipper.rect != rect || oldClipper.radius != radius;
+}
+
 PageRouteBuilder<T> containerTransformRoute<T>({
   required WidgetBuilder builder,
   Rect? fromRect,
@@ -163,39 +181,33 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                 children: [
                   // 驱动首页那层的"下沉"（首页在另一个 Navigator，只能靠全局值联动）。
                   _SinkDriver(animation: animation),
-                  // 打开时把下面那层（首页）虚化并压暗一点，
-                  // 就是 iOS / HyperOS 桌面打开应用那个味道。
+                  // 只压暗，不做高斯模糊：全屏 BackdropFilter 每帧都要重新采样背景，
+                  // 在课表这种重页面上会明显掉帧（骁龙 8e5 都掉），得不偿失。
                   Positioned.fill(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(
-                        sigmaX: 10 * t,
-                        sigmaY: 10 * t,
-                      ),
-                      child: ColoredBox(
-                        color: Colors.black.withValues(alpha: 0.16 * t),
-                      ),
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.12 * t),
                     ),
                   ),
-                  Positioned.fromRect(
-                    rect: rectTween.lerp(t)!,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.lerp(
-                        startRadius,
-                        endRadius,
-                        t,
-                      )!,
-                      // 等比缩放：整页缩进卡片里再长出来（iOS 那个观感）。
-                      // 不要用 BoxFit.fill —— 那会把页面压扁；
-                      // 也不要"整屏 + 左上角裁切" —— 那样锚点在左上角，很别扭。
-                      child: ColoredBox(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: SizedBox(
-                            width: size.width,
-                            height: size.height,
-                            child: page,
-                          ),
+                  // 页面**固定按整屏位置**摆好，只被一个"从卡片长到整屏的窗口"裁切。
+                  // 窗口的位置就是控件的位置，所以看起来是从那张卡片里揭开的：
+                  //   - 不用 fill / contain：那是在缩放页面，会压扁或留白；
+                  //   - 不用贴角对齐：那是把页面跟着窗口挪，内容会一直贴在角上。
+                  // RepaintBoundary 很关键：窗口每帧都在变，
+                  // 没有它，下面这个重页面（比如课表）会被逼着每帧重绘。
+                  Positioned.fill(
+                    child: ClipPath(
+                      clipper: _TransformWindowClipper(
+                        rect: rectTween.lerp(t)!,
+                        radius: BorderRadius.lerp(
+                          startRadius,
+                          endRadius,
+                          t,
+                        )!,
+                      ),
+                      child: RepaintBoundary(
+                        child: ColoredBox(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          child: page,
                         ),
                       ),
                     ),
