@@ -22,6 +22,7 @@ import 'package:watermeter/repository/miscellaneous_session/aircon_session.dart'
 /// 米家那套蓝色与橙色。
 const _miBlue = Color(0xFF2F73EA);
 const _miOrange = Color(0xFFFF6B3D);
+const _airconTemperatureModeHeroTag = 'aircon-temperature-mode';
 
 /// 温度的可调范围，和设备本身一致。
 const _minTemperature = 18;
@@ -435,7 +436,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   32,
                 ),
                 children: [
-                  _CardEntrance(index: 0, child: _hero(context, state)),
+                  _hero(context, state),
                   if (_error != null)
                     _CardEntrance(
                       index: 1,
@@ -483,78 +484,62 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
     );
   }
 
-  /// 顶上那个大温度：数字换的时候上下滑一下。
+  /// 顶上那个大温度和模式与首页状态卡片共享 Hero。
   Widget _hero(BuildContext context, AirconState state) {
     final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 28),
-      child: Column(
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 360),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (child, animation) => SizeTransition(
-              sizeFactor: animation,
-              alignment: Alignment.topCenter,
-              child: FadeTransition(opacity: animation, child: child),
-            ),
-            child: !state.isOn
-                ? Text(
-                    FlutterI18n.translate(context, "electricity.aircon_power"),
-                    key: const ValueKey("off"),
-                    style: textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  )
-                : Row(
-                    key: const ValueKey("on"),
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _DirectionalTemperature(
-                        value: state.targetTemperature,
-                        style: textTheme.displayLarge?.copyWith(
-                          fontSize: 92,
-                          height: 1,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, left: 2),
-                        child: Text(
-                          "℃",
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-          const SizedBox(height: 6),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 260),
-            child: Row(
-              key: ValueKey("${state.isOn}-${state.mode}"),
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  _modeIcon(state.mode),
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Hero(
+      tag: _airconTemperatureModeHeroTag,
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 28),
+          child: Column(
+            children: [
+              if (!state.isOn)
                 Text(
-                  FlutterI18n.translate(context, state.mode.labelKey),
-                  style: textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  FlutterI18n.translate(context, "electricity.aircon_power"),
+                  style: textTheme.titleMedium?.copyWith(color: color),
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.targetTemperature.toString(),
+                      style: textTheme.displayLarge?.copyWith(
+                        fontSize: 92,
+                        height: 1,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, left: 2),
+                      child: Text(
+                        "℃",
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(_modeIcon(state.mode), size: 20, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    FlutterI18n.translate(context, state.mode.labelKey),
+                    style: textTheme.titleMedium?.copyWith(color: color),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -9,6 +9,8 @@ import 'package:watermeter/page/energy/aircon_remote_page.dart';
 import 'package:watermeter/page/homepage/main_page_card.dart';
 import 'package:watermeter/page/public_widget/context_extension.dart';
 
+const _airconTemperatureModeHeroTag = 'aircon-temperature-mode';
+
 class AirconCard extends StatelessWidget {
   const AirconCard({super.key});
 
@@ -90,7 +92,13 @@ class AirconCard extends StatelessWidget {
           isLoad: imei.isNotEmpty && state.isLoading,
           icon: Icons.ac_unit,
           text: FlutterI18n.translate(context, "homepage.aircon_card.title"),
-          infoText: Text(display.status, style: const TextStyle(fontSize: 20)),
+          infoText: Hero(
+            tag: _airconTemperatureModeHeroTag,
+            child: Material(
+              color: Colors.transparent,
+              child: Text(display.status, style: const TextStyle(fontSize: 20)),
+            ),
+          ),
           bottomText: Text(display.detail, overflow: TextOverflow.ellipsis),
         );
       },
