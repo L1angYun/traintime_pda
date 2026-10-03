@@ -61,17 +61,23 @@ class Routes {
     };
   }
 
-  /// Build a [PageRouteBuilder] from a registered route name.
+  /// 有来源卡片（从首页卡片点进来）才套容器变形，
+  /// 其余一律用原来那条 [MaterialPageRoute] —— 不改变其它页面的老动效。
   static Route<T> resolveRoute<T extends Object?>(
     String name, {
     Object? arguments,
   }) {
     final source = ContainerTransformSource.consume();
+    final settings = RouteSettings(name: name, arguments: arguments);
+    final builder = (_) => _resolve(name, arguments);
+    if (source == null) {
+      return MaterialPageRoute<T>(settings: settings, builder: builder);
+    }
     return containerTransformRoute<T>(
-      settings: RouteSettings(name: name, arguments: arguments),
-      builder: (_) => _resolve(name, arguments),
-      fromRect: source?.fromRect,
-      fromRadius: source?.fromRadius,
+      settings: settings,
+      builder: builder,
+      fromRect: source.fromRect,
+      fromRadius: source.fromRadius,
     );
   }
 }
