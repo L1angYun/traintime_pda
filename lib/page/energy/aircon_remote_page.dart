@@ -27,6 +27,8 @@ const _airconTemperatureModeHeroTag = 'aircon-temperature-mode';
 /// 温度的可调范围，和设备本身一致。
 const _minTemperature = 18;
 const _maxTemperature = 32;
+const _stateMotionDuration = Duration(milliseconds: 260);
+const _pressMotionDuration = Duration(milliseconds: 120);
 
 class AirconRemotePage extends StatefulWidget {
   const AirconRemotePage({super.key});
@@ -355,31 +357,6 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          FlutterI18n.translate(context, "electricity.aircon_remote"),
-        ),
-        actions: [
-          IconButton(
-            onPressed: _isFetching ? null : _refreshDeviceState,
-            tooltip: FlutterI18n.translate(context, "electricity.update"),
-            icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            onPressed: _isFetching || _pendingMatches != null
-                ? null
-                : _configure,
-            tooltip: FlutterI18n.translate(
-              context,
-              "setting.aircon_imei_title",
-            ),
-            icon: const Icon(Icons.settings_outlined),
-          ),
-        ],
-      ),
       body: SignalBuilder(
         builder: (context) {
           if (_controller.imeiSignal.value.isEmpty) {
@@ -412,7 +389,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
             children: [
               /// 背景渐变随模式变化，AnimatedContainer 会把颜色揉过去。
               AnimatedContainer(
-                duration: const Duration(milliseconds: 480),
+                duration: _stateMotionDuration,
                 curve: Curves.easeOutCubic,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -431,7 +408,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
               ListView(
                 padding: EdgeInsets.fromLTRB(
                   16,
-                  MediaQuery.paddingOf(context).top + kToolbarHeight + 12,
+                  MediaQuery.paddingOf(context).top + 12,
                   16,
                   32,
                 ),
@@ -469,6 +446,31 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                     child: _modeCard(context, state, busy),
                   ),
                 ],
+              ),
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 2,
+                left: 4,
+                child: IconButton(
+                  onPressed: _isFetching ? null : _refreshDeviceState,
+                  tooltip: FlutterI18n.translate(context, "electricity.update"),
+                  color: scheme.onSurfaceVariant,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 2,
+                right: 4,
+                child: IconButton(
+                  onPressed: _isFetching || _pendingMatches != null
+                      ? null
+                      : _configure,
+                  tooltip: FlutterI18n.translate(
+                    context,
+                    "setting.aircon_imei_title",
+                  ),
+                  color: scheme.onSurfaceVariant,
+                  icon: const Icon(Icons.settings_outlined),
+                ),
               ),
               if (busy)
                 const Positioned(
@@ -586,6 +588,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
         final indoor = state?.indoorTemperature;
 
         return _MiCard(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
           onTap: _isFetching ? null : _controller.refreshEnergyInfo,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,7 +740,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
               Expanded(
                 child: TweenAnimationBuilder<double>(
                   tween: Tween<double>(end: fraction.clamp(0.0, 1.0)),
-                  duration: const Duration(milliseconds: 280),
+                  duration: _stateMotionDuration,
                   curve: Curves.easeOutCubic,
                   builder: (context, value, _) => Container(
                     height: 58,
@@ -750,7 +753,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                         FractionallySizedBox(
                           widthFactor: value,
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 260),
+                            duration: _stateMotionDuration,
                             decoration: BoxDecoration(
                               color: state.isOn
                                   ? _miBlue
@@ -1062,7 +1065,7 @@ class _DirectionalTemperatureState extends State<_DirectionalTemperature> {
   Widget build(BuildContext context) {
     final increasing = widget.value > _oldValue;
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
+      duration: _stateMotionDuration,
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeInCubic,
       transitionBuilder: (child, animation) {
@@ -1123,7 +1126,7 @@ class _SlidingOptionRow extends StatelessWidget {
             children: [
               if (selectedIndex >= 0)
                 AnimatedPositioned(
-                  duration: const Duration(milliseconds: 280),
+                  duration: _stateMotionDuration,
                   curve: Curves.easeOutCubic,
                   left: selectedIndex * slot + (slot - 54) / 2,
                   top: 0,
@@ -1183,14 +1186,15 @@ class _SlidingOptionCellState extends State<_SlidingOptionCell> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.9 : 1,
-        duration: const Duration(milliseconds: 120),
+        duration: _pressMotionDuration,
+        curve: Curves.easeOutCubic,
         child: Column(
           children: [
             SizedBox(
               height: 54,
               child: Center(
                 child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 180),
+                  duration: _stateMotionDuration,
                   style: TextStyle(
                     color: color,
                     fontSize: 21,
@@ -1204,7 +1208,7 @@ class _SlidingOptionCellState extends State<_SlidingOptionCell> {
             ),
             const SizedBox(height: 8),
             AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
+              duration: _stateMotionDuration,
               style: TextStyle(
                 fontSize: 12,
                 color: widget.selected ? _miBlue : scheme.onSurfaceVariant,
@@ -1317,10 +1321,11 @@ class _RoundButtonState extends State<_RoundButton> {
       onTap: widget.enabled ? widget.onTap : null,
       child: AnimatedScale(
         scale: _pressed ? 0.9 : 1,
-        duration: const Duration(milliseconds: 120),
+        duration: _pressMotionDuration,
+        curve: Curves.easeOutCubic,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
+          duration: _stateMotionDuration,
+          curve: Curves.easeOutCubic,
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(color: background, shape: BoxShape.circle),
@@ -1359,7 +1364,7 @@ class _SwitchRow extends StatelessWidget {
       child: Row(
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
+            duration: _stateMotionDuration,
             width: 34,
             height: 34,
             decoration: BoxDecoration(
