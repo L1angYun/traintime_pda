@@ -370,6 +370,7 @@ electricity:
   aircon_cache_notice: "Showing cached aircon data from {time}"
   aircon_remote: Aircon Remote
   aircon_control_error: Unable to fetch the aircon state
+  aircon_indoor: Indoor
   aircon_command_ok: Aircon command completed
   aircon_control_section: Basic controls
   aircon_operation_section: Operation

@@ -328,6 +328,7 @@ electricity:
   aircon_cache_notice: 当前显示空调缓存数据，缓存时间：{time}
   aircon_remote: 空调遥控
   aircon_control_error: 无法获取空调状态
+  aircon_indoor: 室内温度
   aircon_command_ok: 空调指令已执行
   aircon_control_section: 基本控制
   aircon_operation_section: 运行设置

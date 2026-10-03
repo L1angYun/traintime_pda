@@ -327,6 +327,7 @@ electricity:
   aircon_cache_notice: 當前顯示空調緩存數據，緩存時間：{time}
   aircon_remote: 空調遙控
   aircon_control_error: 無法獲取空調狀態
+  aircon_indoor: 室內溫度
   aircon_command_ok: 空調指令已執行
   aircon_control_section: 基本控制
   aircon_operation_section: 運行設定
