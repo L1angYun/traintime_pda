@@ -66,26 +66,12 @@ class Routes {
     String name, {
     Object? arguments,
   }) {
-    final transforming = isContainerTransformNavigation;
-    return ContainerTransformRoute<T>(
+    final source = ContainerTransformSource.consume();
+    return containerTransformRoute<T>(
       settings: RouteSettings(name: name, arguments: arguments),
-      transitionDuration: transforming
-          ? containerTransformRouteDuration
-          : containerTransformForwardDuration,
-      reverseTransitionDuration: transforming
-          ? containerTransformReverseDuration
-          : const Duration(milliseconds: 330),
-      pageBuilder: (_, _, _) => _resolve(name, arguments),
-      transitionsBuilder: (_, animation, _, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: transforming
-              ? const Interval(0.70, 1, curve: Curves.easeOut)
-              : Curves.easeOut,
-          reverseCurve: Curves.easeIn,
-        );
-        return FadeTransition(opacity: curved, child: child);
-      },
+      builder: (_) => _resolve(name, arguments),
+      fromRect: source?.fromRect,
+      fromRadius: source?.fromRadius,
     );
   }
 }

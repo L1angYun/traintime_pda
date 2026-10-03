@@ -16,7 +16,6 @@ import 'package:signals/signals_flutter.dart';
 import 'package:watermeter/controller/aircon_controller.dart';
 import 'package:watermeter/model/aircon_state.dart';
 import 'package:watermeter/page/public_widget/toast.dart';
-import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/page/setting/dialogs/aircon_imei_dialog.dart';
 import 'package:watermeter/repository/miscellaneous_session/aircon_session.dart';
 
@@ -461,49 +460,47 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   ),
                 ),
               ),
-              ContainerTransformPageFade(
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    MediaQuery.paddingOf(context).top + 12,
-                    16,
-                    32,
-                  ),
-                  children: [
-                    _hero(context, state),
-                    if (_error != null)
-                      _CardEntrance(
-                        index: 1,
-                        child: _errorCard(context, _error!),
-                      ),
-                    const SizedBox(height: 4),
-                    _CardEntrance(index: 2, child: _energyCard(context)),
-                    _CardEntrance(
-                      index: 3,
-                      child: _powerCard(context, state, busy),
-                    ),
-                    _CardEntrance(
-                      index: 4,
-                      child: _temperatureCard(context, state, busy),
-                    ),
-                    _CardEntrance(
-                      index: 5,
-                      child: _windCard(context, state, busy),
-                    ),
-                    _CardEntrance(
-                      index: 6,
-                      child: _swingCard(context, state, busy),
-                    ),
-                    _CardEntrance(
-                      index: 7,
-                      child: _otherCard(context, state, busy),
-                    ),
-                    _CardEntrance(
-                      index: 8,
-                      child: _modeCard(context, state, busy),
-                    ),
-                  ],
+              ListView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  MediaQuery.paddingOf(context).top + 12,
+                  16,
+                  32,
                 ),
+                children: [
+                  _hero(context, state),
+                  if (_error != null)
+                    _CardEntrance(
+                      index: 1,
+                      child: _errorCard(context, _error!),
+                    ),
+                  const SizedBox(height: 4),
+                  _CardEntrance(index: 2, child: _energyCard(context)),
+                  _CardEntrance(
+                    index: 3,
+                    child: _powerCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 4,
+                    child: _temperatureCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 5,
+                    child: _windCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 6,
+                    child: _swingCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 7,
+                    child: _otherCard(context, state, busy),
+                  ),
+                  _CardEntrance(
+                    index: 8,
+                    child: _modeCard(context, state, busy),
+                  ),
+                ],
               ),
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 2,
