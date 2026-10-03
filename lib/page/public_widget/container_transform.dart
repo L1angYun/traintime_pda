@@ -29,6 +29,68 @@ class ContainerTransformSource {
   }
 }
 
+/// 打开页面时下面那层（首页）缩一点、带点圆角，也就是 iOS / HyperOS 那种"下沉"。
+///
+/// 首页在另一个 Navigator 里，路由碰不到它，所以用一个全局值让它自己动：
+/// 路由的转场驱动这个值，首页用 [ContainerTransformSink] 监听。
+final ValueNotifier<double> containerTransformSink = ValueNotifier<double>(0);
+
+/// 包在首页外面，跟着 [containerTransformSink] 缩放。
+class ContainerTransformSink extends StatelessWidget {
+  const ContainerTransformSink({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<double>(
+      valueListenable: containerTransformSink,
+      child: child,
+      builder: (context, value, child) {
+        if (value <= 0.001) return child!;
+        return Transform.scale(
+          scale: 1 - 0.05 * value,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18 * value),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 把路由动画值同步给 [containerTransformSink]，页面离开时归零。
+class _SinkDriver extends StatefulWidget {
+  const _SinkDriver({required this.animation});
+
+  final Animation<double> animation;
+
+  @override
+  State<_SinkDriver> createState() => _SinkDriverState();
+}
+
+class _SinkDriverState extends State<_SinkDriver> {
+  void _sync() => containerTransformSink.value = widget.animation.value;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.animation.addListener(_sync);
+    _sync();
+  }
+
+  @override
+  void dispose() {
+    widget.animation.removeListener(_sync);
+    containerTransformSink.value = 0;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
 /// 直线插值，不要走弧线。
 ///
 /// 之前这里做过"中心弧线"，结果长条形的卡片打开时会明显左右抽动
@@ -99,6 +161,8 @@ PageRouteBuilder<T> containerTransformRoute<T>({
               final t = Curves.fastOutSlowIn.transform(raw);
               return Stack(
                 children: [
+                  // 驱动首页那层的"下沉"（首页在另一个 Navigator，只能靠全局值联动）。
+                  _SinkDriver(animation: animation),
                   // 打开时把下面那层（首页）虚化并压暗一点，
                   // 就是 iOS / HyperOS 桌面打开应用那个味道。
                   Positioned.fill(
@@ -120,18 +184,18 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                         endRadius,
                         t,
                       )!,
-                      // 关键：页面保持整屏尺寸，只被"长大的矩形"裁切 ——
-                      // 之前用 FittedBox(fit: fill) 会把整页硬压进小矩形，
-                      // 比例全变，看起来像被压缩。
+                      // 等比缩放：整页缩进卡片里再长出来（iOS 那个观感）。
+                      // 不要用 BoxFit.fill —— 那会把页面压扁；
+                      // 也不要"整屏 + 左上角裁切" —— 那样锚点在左上角，很别扭。
                       child: ColoredBox(
                         color: Theme.of(context).scaffoldBackgroundColor,
-                        child: OverflowBox(
-                          alignment: Alignment.topLeft,
-                          minWidth: size.width,
-                          maxWidth: size.width,
-                          minHeight: size.height,
-                          maxHeight: size.height,
-                          child: page,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: SizedBox(
+                            width: size.width,
+                            height: size.height,
+                            child: page,
+                          ),
                         ),
                       ),
                     ),
