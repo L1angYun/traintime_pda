@@ -85,34 +85,27 @@ extension HomeCardPadding on Widget {
                 if (enableContainerTransform &&
                     availableWidth <= containerTransformSplitBreakpoint) {
                   final sourceBox = sourceContext.findRenderObject();
-                  final navigatorBox = Navigator.of(
-                    sourceContext,
-                  ).context.findRenderObject();
-                  if (sourceBox is RenderBox &&
-                      navigatorBox is RenderBox &&
-                      sourceBox.hasSize &&
-                      navigatorBox.hasSize) {
+                  if (sourceBox is RenderBox && sourceBox.hasSize) {
                     // The Builder includes the card's outer four-pixel padding.
                     final bounds = const EdgeInsets.all(
                       4,
                     ).deflateRect(Offset.zero & sourceBox.size);
+                    // 用全局坐标：分屏时卡片在左栏、路由在详情栏，
+                    // 两边的 Navigator 各有一套坐标，只有全局坐标是对的。
+                    // （宽屏本来就不启用这个动效，这里只保证手机上的正确性。）
+                    final screen = Offset.zero & MediaQuery.sizeOf(sourceContext);
                     final rect = Rect.fromPoints(
-                      sourceBox.localToGlobal(
-                        bounds.topLeft,
-                        ancestor: navigatorBox,
-                      ),
-                      sourceBox.localToGlobal(
-                        bounds.bottomRight,
-                        ancestor: navigatorBox,
-                      ),
-                    );
+                      sourceBox.localToGlobal(bounds.topLeft),
+                      sourceBox.localToGlobal(bounds.bottomRight),
+                    ).intersect(screen);
                     if (!rect.isEmpty) {
                       ContainerTransformSource.pending =
                           ContainerTransformSource(
                             fromRect: rect,
-                            fromRadius: cardShape.borderRadius.resolve(
-                              Directionality.of(sourceContext),
-                            ),
+                            // 卡片圆角是这个文件里写死的 14；不要从
+                            // RoundedSuperellipseBorder 上读，那个 getter
+                            // 拿不到真实半径，会退化成直角展开。
+                            fromRadius: BorderRadius.circular(14),
                           );
                     }
                   }

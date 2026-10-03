@@ -72,15 +72,12 @@ PageRouteBuilder<T> containerTransformRoute<T>({
     // from reacting to this route's secondary animation. No barrier dims it.
     opaque: false,
     barrierColor: null,
-    transitionDuration: hasSource
-        ? containerTransformForwardDuration
-        : Duration.zero,
-    reverseTransitionDuration: hasSource
-        ? containerTransformReverseDuration
-        : Duration.zero,
+    // 即使没量到来源矩形也要有动画（退化成从屏幕中下方长出来），
+    // 否则一旦量失败就变成"直接出现"，之前就是这么翻车的。
+    transitionDuration: containerTransformForwardDuration,
+    reverseTransitionDuration: containerTransformReverseDuration,
     pageBuilder: (context, _, _) => builder(context),
     transitionsBuilder: (context, animation, _, child) {
-      if (!hasSource) return child;
       return LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.biggest;
@@ -97,9 +94,16 @@ PageRouteBuilder<T> containerTransformRoute<T>({
             corners?.bottomRight.y ?? 0.0,
           ].reduce(math.max);
           final rectTween = ContainerTransformRectTween(
-            begin: fromRect,
+            begin: hasSource
+                ? fromRect
+                : Rect.fromCenter(
+                    center: Offset(size.width / 2, size.height * 0.62),
+                    width: size.width * 0.42,
+                    height: size.height * 0.14,
+                  ),
             end: Offset.zero & size,
           );
+          final startRadius = fromRadius ?? BorderRadius.circular(14);
           final endRadius = BorderRadius.circular(screenRadius);
           return AnimatedBuilder(
             animation: animation,
@@ -112,18 +116,27 @@ PageRouteBuilder<T> containerTransformRoute<T>({
               child: child,
             ),
             builder: (context, page) {
-              final t = Curves.fastOutSlowIn.transform(animation.value);
+              final raw = animation.value;
+              // 收尾这一帧直接交还真页面：否则会从"裁剪+缩放版"切到真页面，
+              // 中间闪一下底下的首页。
+              if (raw >= 0.999) return page!;
+              final t = Curves.fastOutSlowIn.transform(raw);
               return Stack(
                 children: [
                   Positioned.fromRect(
                     rect: rectTween.lerp(t)!,
                     child: ClipRRect(
                       borderRadius: BorderRadius.lerp(
-                        fromRadius ?? BorderRadius.circular(16),
+                        startRadius,
                         endRadius,
                         t,
                       )!,
-                      child: FittedBox(fit: BoxFit.fill, child: page),
+                      // 页面自己还没画出内容时，先铺页面底色，
+                      // 免得正在长大的矩形里透出底下的首页。
+                      child: ColoredBox(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: FittedBox(fit: BoxFit.fill, child: page),
+                      ),
                     ),
                   ),
                 ],
