@@ -55,10 +55,7 @@ class HomePage extends StatelessWidget {
     return BasedSplitView(
       navigatorKey: splitViewKey,
       leftWidget: ContainerTransformSink(
-          child: RepaintBoundary(
-            key: containerTransformBackgroundKey,
-            child: HomePageMaster(key: leftKey),
-          ),
+          child: RepaintBoundary(child: HomePageMaster(key: leftKey)),
         ),
       rightPlaceholder: const SplitPagePlaceholder(),
     );

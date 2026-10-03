@@ -1,16 +1,16 @@
 // Copyright 2026 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
-
-import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 
 import 'package:material_ui/material_ui.dart';
 
 const containerTransformForwardDuration = Duration(milliseconds: 420);
 const containerTransformReverseDuration = Duration(milliseconds: 320);
+
+/// 没有来源卡片时用的短过渡：不然页面会是"闪现"出来的。
+const containerTransformPlainDuration = Duration(milliseconds: 220);
 
 // HomePage uses BasedSplitView's defaults: left minimum 364, divider 1,
 // right minimum 364. It switches to two columns only above their sum.
@@ -32,68 +32,23 @@ class ContainerTransformSource {
   }
 }
 
-/// 背景模糊：照小米那份专利来（CN121599866A，申请日 2024-08-26）。
-///
-/// 专利的做法是三步：把图**降采样** → 在**小图**上做高斯模糊 → 再**升采样**回原尺寸。
-/// 关键在于模糊的运算量只跟小图的像素数有关，所以极便宜；
-/// 我们这边就是：跳转前抓一张 1/8 的首页小图，转场里对小图做 ImageFilter.blur，
-/// 再交给 RawImage 放大铺满 —— 放大这一步顺带把小图的模糊一起放大，
-/// 观感就是全屏高斯模糊，而每帧只是「一张小图 + 一次小范围模糊」。
-/// （全屏 BackdropFilter 是每帧重新采样整个背景，课表那种重页面直接掉帧。）
-///
-/// 降采样比例和模糊半径是配着来的：缩得越狠，小图上的 sigma 就该越小。
-final GlobalKey containerTransformBackgroundKey = GlobalKey();
-const double containerTransformThumbScale = 0.12;
-ui.Image? _backgroundThumb;
-
-/// 跳转前调用：抓一张首页的小图。失败就静静放弃，退回纯压暗。
-Future<void> captureContainerTransformBackground() async {
-  final boundary =
-      containerTransformBackgroundKey.currentContext?.findRenderObject();
-  if (boundary is! RenderRepaintBoundary) return;
-  try {
-    final image = await boundary.toImage(
-      pixelRatio: containerTransformThumbScale,
-    );
-    _backgroundThumb?.dispose();
-    _backgroundThumb = image;
-  } catch (_) {
-    // 抓不到就算了，别把跳转搞挂。
-  }
-}
-
 /// 打开页面时下面那层（首页）缩一点、带点圆角，也就是 iOS / HyperOS 那种"下沉"。
 ///
 /// 首页在另一个 Navigator 里，路由碰不到它，所以用一个全局值让它自己动：
 /// 路由的转场驱动这个值，首页用 [ContainerTransformSink] 监听。
 final ValueNotifier<double> containerTransformSink = ValueNotifier<double>(0);
 
-/// 包在首页外面：跟着 [containerTransformSink] 缩放，
-/// 并且在首页画完第一帧后**提前**把背景缩略图抓好 ——
-/// 这样点卡片时图已经在了，不会出现"动画开始后图才啪一下出现"的断裂感。
-class ContainerTransformSink extends StatefulWidget {
+/// 包在首页外面，跟着 [containerTransformSink] 缩放。
+class ContainerTransformSink extends StatelessWidget {
   const ContainerTransformSink({super.key, required this.child});
 
   final Widget child;
 
   @override
-  State<ContainerTransformSink> createState() => _ContainerTransformSinkState();
-}
-
-class _ContainerTransformSinkState extends State<ContainerTransformSink> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(captureContainerTransformBackground());
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<double>(
       valueListenable: containerTransformSink,
-      child: widget.child,
+      child: child,
       builder: (context, value, child) {
         if (value <= 0.001) return child!;
         return ColoredBox(
@@ -151,7 +106,6 @@ class ContainerTransformRectTween extends RectTween {
   ContainerTransformRectTween({super.begin, super.end});
 }
 
-
 PageRouteBuilder<T> containerTransformRoute<T>({
   required WidgetBuilder builder,
   Rect? fromRect,
@@ -165,16 +119,25 @@ PageRouteBuilder<T> containerTransformRoute<T>({
     // from reacting to this route's secondary animation. No barrier dims it.
     opaque: false,
     barrierColor: null,
-    // 即使没量到来源矩形也要有动画（退化成从屏幕中下方长出来），
-    // 否则一旦量失败就变成"直接出现"，之前就是这么翻车的。
-    transitionDuration: containerTransformForwardDuration,
-    reverseTransitionDuration: containerTransformReverseDuration,
+    // 有来源卡片：从卡片位置长到整屏。
+    // 没有来源（比如从设置页打开「关于软件」）：不套这个动效，但也要有过渡。
+    transitionDuration: hasSource
+        ? containerTransformForwardDuration
+        : containerTransformPlainDuration,
+    reverseTransitionDuration: hasSource
+        ? containerTransformReverseDuration
+        : containerTransformPlainDuration,
     pageBuilder: (context, _, _) => builder(context),
     transitionsBuilder: (context, animation, _, child) {
-      // 没有来源卡片就直接放行：这个动效只属于「从首页卡片打开一个页面」。
-      // 之前不管从哪进来都硬跑一次，还会把首页的缩略图当作背景画出来 ——
+      // 这个动效只属于「从首页卡片打开一个页面」。
+      // 之前不管从哪进来都硬跑一次，还把首页的缩略图当背景画出来 ——
       // 从设置页打开「关于软件」时就露出了主页，明显不对。
-      if (!hasSource) return child;
+      if (!hasSource) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      }
       return LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.biggest;
@@ -191,13 +154,7 @@ PageRouteBuilder<T> containerTransformRoute<T>({
             corners?.bottomRight.y ?? 0.0,
           ].reduce(math.max);
           final rectTween = ContainerTransformRectTween(
-            begin: hasSource
-                ? fromRect
-                : Rect.fromCenter(
-                    center: Offset(size.width / 2, size.height * 0.62),
-                    width: size.width * 0.42,
-                    height: size.height * 0.14,
-                  ),
+            begin: fromRect,
             end: Offset.zero & size,
           );
           final startRadius = fromRadius ?? BorderRadius.circular(14);
@@ -212,7 +169,7 @@ PageRouteBuilder<T> containerTransformRoute<T>({
             ),
             builder: (context, page) {
               final raw = animation.value;
-              // 收尾这一帧直接交还真页面：否则会从"裁剪版"切到真页面，
+              // 收尾这一帧直接交还真页面：否则会从"缩放版"切到真页面，
               // 中间闪一下底下的首页。
               if (raw >= 0.999) return page!;
               final t = Curves.fastOutSlowIn.transform(raw);
@@ -220,33 +177,22 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                 children: [
                   // 驱动首页那层的"下沉"（首页在另一个 Navigator，只能靠全局值联动）。
                   _SinkDriver(animation: animation),
-                  // 背景：小图 + 小图上的高斯模糊（专利那三步的后两步），
-                  // 再压一层暗。抓不到小图时就是纯压暗，不会报错。
+                  // 背景：**直接模糊活的背景**（BackdropFilter）。
+                  // 之前试过「抓首页截图 + 在小图上模糊 + 放大」那套（小米专利的省算力做法），
+                  // 但截图不会跟着首页一起下沉，于是截图和真实首页错开，看着是叠影。
+                  // 模糊活内容就没这个问题。模糊半径同样从 0 长大，
+                  // 所以第一帧和首页完全一致，不会跳变。
                   Positioned.fill(
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        if (_backgroundThumb != null)
-                          // 模糊半径**跟着动画一起长大**（0 → 满）：
-                          // 恒定 sigma 会一开场就糊满，看着是「啪」的一下；
-                          // 从 0 开始长才是连续的糊起来。
-                          // 同时小图本身也淡入 —— t 很小时透出来的是真实首页，
-                          // 所以第一帧和首页完全一样，不会有任何跳变。
-                          Opacity(
-                            opacity: t.clamp(0.0, 1.0),
-                            child: ImageFiltered(
-                              // 小图上的 sigma；后面要放大 8 倍左右，
-                              // 视觉上相当于全屏图上十几的 sigma。
-                              imageFilter: ui.ImageFilter.blur(
-                                sigmaX: 1.8 * t,
-                                sigmaY: 1.8 * t,
-                              ),
-                              child: RawImage(
-                                image: _backgroundThumb,
-                                fit: BoxFit.cover,
-                                filterQuality: FilterQuality.low,
-                              ),
+                        if (t > 0.001)
+                          BackdropFilter(
+                            filter: ui.ImageFilter.blur(
+                              sigmaX: 14 * t,
+                              sigmaY: 14 * t,
                             ),
+                            child: const ColoredBox(color: Color(0x00000000)),
                           ),
                         ColoredBox(
                           color: Colors.black.withValues(alpha: 0.10 * t),
