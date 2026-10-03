@@ -47,11 +47,15 @@ class ContainerTransformSink extends StatelessWidget {
       child: child,
       builder: (context, value, child) {
         if (value <= 0.001) return child!;
-        return Transform.scale(
-          scale: 1 - 0.05 * value,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18 * value),
-            child: child,
+        return ColoredBox(
+          // 缩下去之后后面不能是黑的：先铺一层 App 自己的底色。
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Transform.scale(
+            scale: 1 - 0.03 * value,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16 * value),
+              child: child,
+            ),
           ),
         );
       },
@@ -98,24 +102,6 @@ class ContainerTransformRectTween extends RectTween {
   ContainerTransformRectTween({super.begin, super.end});
 }
 
-/// 「正在长大的窗口」：从控件的位置长到整屏，带圆角。
-///
-/// 页面本身固定按整屏摆放，只有这个窗口在动 —— 所以看到的是页面被"揭开"，
-/// 而不是页面被缩放或平移。
-class _TransformWindowClipper extends CustomClipper<Path> {
-  const _TransformWindowClipper({required this.rect, required this.radius});
-
-  final Rect rect;
-  final BorderRadius radius;
-
-  @override
-  Path getClip(Size size) =>
-      Path()..addRRect(RRect.fromRectAndRadius(rect, radius.topLeft));
-
-  @override
-  bool shouldReclip(_TransformWindowClipper oldClipper) =>
-      oldClipper.rect != rect || oldClipper.radius != radius;
-}
 
 PageRouteBuilder<T> containerTransformRoute<T>({
   required WidgetBuilder builder,
@@ -188,26 +174,31 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                       color: Colors.black.withValues(alpha: 0.12 * t),
                     ),
                   ),
-                  // 页面**固定按整屏位置**摆好，只被一个"从卡片长到整屏的窗口"裁切。
-                  // 窗口的位置就是控件的位置，所以看起来是从那张卡片里揭开的：
-                  //   - 不用 fill / contain：那是在缩放页面，会压扁或留白；
-                  //   - 不用贴角对齐：那是把页面跟着窗口挪，内容会一直贴在角上。
+                  // 页面**等比铺满**正在长大的窗口（BoxFit.cover）：
+                  //   fill    —— 会压扁；contain —— 长条形卡片两边留白太多；
+                  //   cover   —— 既不压扁也不留白，正是参考录屏里的做法。
+                  // 窗口本身从控件的位置长到整屏，看起来就是从那张卡片里长出来的。
                   // RepaintBoundary 很关键：窗口每帧都在变，
                   // 没有它，下面这个重页面（比如课表）会被逼着每帧重绘。
-                  Positioned.fill(
-                    child: ClipPath(
-                      clipper: _TransformWindowClipper(
-                        rect: rectTween.lerp(t)!,
-                        radius: BorderRadius.lerp(
-                          startRadius,
-                          endRadius,
-                          t,
-                        )!,
-                      ),
-                      child: RepaintBoundary(
-                        child: ColoredBox(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          child: page,
+                  Positioned.fromRect(
+                    rect: rectTween.lerp(t)!,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.lerp(
+                        startRadius,
+                        endRadius,
+                        t,
+                      )!,
+                      child: ColoredBox(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: RepaintBoundary(
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: size.width,
+                              height: size.height,
+                              child: page,
+                            ),
+                          ),
                         ),
                       ),
                     ),
