@@ -23,7 +23,6 @@ import 'package:watermeter/repository/miscellaneous_session/aircon_session.dart'
 /// 米家那套蓝色与橙色。
 const _miBlue = Color(0xFF2F73EA);
 const _miOrange = Color(0xFFFF6B3D);
-const _airconTemperatureModeHeroTag = 'aircon-temperature-mode';
 
 /// 温度的可调范围，和设备本身一致。
 const _minTemperature = 18;
@@ -444,23 +443,20 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
             children: [
               /// 背景渐变随模式变化，AnimatedContainer 会把颜色揉过去。
               Positioned.fill(
-                child: containerTransformTarget(
-                  tag: _airconTemperatureModeHeroTag,
-                  child: AnimatedContainer(
-                    duration: _stateMotionDuration,
-                    curve: Curves.easeOutCubic,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: isDark
-                            ? [
-                                Color.lerp(gradient.first, Colors.black, 0.72)!,
-                                scheme.surface,
-                              ]
-                            : gradient,
-                        stops: const [0, 0.55],
-                      ),
+                child: AnimatedContainer(
+                  duration: _stateMotionDuration,
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: isDark
+                          ? [
+                              Color.lerp(gradient.first, Colors.black, 0.72)!,
+                              scheme.surface,
+                            ]
+                          : gradient,
+                      stops: const [0, 0.55],
                     ),
                   ),
                 ),
@@ -555,7 +551,6 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
     );
   }
 
-  /// 顶上那个大温度和模式与首页状态卡片共享 Hero。
   Widget _hero(BuildContext context, AirconState state) {
     final textTheme = Theme.of(context).textTheme;
     final color = Theme.of(context).colorScheme.onSurfaceVariant;

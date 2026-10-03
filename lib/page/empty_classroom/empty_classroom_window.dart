@@ -8,10 +8,7 @@ import 'package:styled_widget/styled_widget.dart';
 import 'package:watermeter/model/xidian_ids/empty_classroom.dart';
 import 'package:watermeter/page/empty_classroom/empty_classroom_search_window.dart';
 import 'package:watermeter/page/public_widget/public_widget.dart';
-import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/repository/ids_session/empty_classroom_session.dart';
-
-const _emptyClassroomHeaderHeroTag = 'empty-classroom-header';
 
 class EmptyClassroomWindow extends StatefulWidget {
   const EmptyClassroomWindow({super.key});
@@ -35,37 +32,24 @@ class _EmptyClassroomWindowState extends State<EmptyClassroomWindow> {
       appBar: AppBar(
         title: Text(FlutterI18n.translate(context, "empty_classroom.title")),
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: containerTransformTarget(
-              tag: _emptyClassroomHeaderHeroTag,
-              child: ColoredBox(color: Theme.of(context).colorScheme.surface),
-            ),
-          ),
-          ContainerTransformPageFade(
-            child: FutureBuilder(
-              future: places,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    return ReloadWidget(
-                      errorStatus: snapshot.error,
-                      function: () => setState(() {
-                        places = EmptyClassroomSession().getBuildingList();
-                      }),
-                    );
-                  } else {
-                    return EmptyClassroomSearchWindow(places: snapshot.data!);
-                  }
-                } else {
-                  return const CircularProgressIndicator().center();
-                }
-              },
-            ),
-          ),
-        ],
+      body: FutureBuilder(
+        future: places,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasError) {
+              return ReloadWidget(
+                errorStatus: snapshot.error,
+                function: () => setState(() {
+                  places = EmptyClassroomSession().getBuildingList();
+                }),
+              );
+            } else {
+              return EmptyClassroomSearchWindow(places: snapshot.data!);
+            }
+          } else {
+            return const CircularProgressIndicator().center();
+          }
+        },
       ),
     );
   }

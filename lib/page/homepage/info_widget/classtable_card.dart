@@ -14,11 +14,8 @@ import 'package:watermeter/routing/routes.dart';
 import 'package:watermeter/page/homepage/home_card_padding.dart';
 import 'package:watermeter/model/home_arrangement.dart';
 import 'package:watermeter/page/public_widget/context_extension.dart';
-import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
 import 'package:watermeter/themes/color_seed.dart';
-
-const _classTableHeaderHeroTag = 'classtable-header';
 
 class ClassTableCard extends StatefulWidget {
   const ClassTableCard({super.key});
@@ -65,69 +62,63 @@ class _ClassTableCardState extends State<ClassTableCard> {
 
   @override
   Widget build(BuildContext context) {
-    return containerTransformSource(
-      tag: _classTableHeaderHeroTag,
-      child:
-          SignalBuilder(
-                builder: (context) {
-                  final controller = home.HomepageController.i;
-                  final classTableController = ClassTableController.i;
-                  final arrangementState =
-                      controller.homepageArrangementStateComputedSignal.value;
-                  final arrangements =
-                      controller.arrangementComputedSignal.value;
-                  final isTomorrow = controller.isTomorrowComputedSignal.value;
-                  final updateTime = controller.updateTimeComputedSignal.value;
-                  final displayTime = isTomorrow
-                      ? updateTime.add(const Duration(days: 1))
-                      : updateTime;
-                  final isAllSourcesLoading =
-                      controller.isAllSourcesLoadingComputedSignal.value;
-                  final isPartialSourcesLoading =
-                      controller.isPartialSourcesLoadingComputedSignal.value;
-                  final failedSources =
-                      controller.failedSourcesComputedSignal.value;
-                  final havePhysicsExperiment =
-                      controller.havePhysicsExperimentSignal.value;
-                  final isPostGraduate = controller.isPostGraduate;
-                  final currentWeek = classTableController.getCurrentWeek(
-                    displayTime,
-                  );
-                  final semesterLength = classTableController
-                      .classTableComputedSignal
-                      .value
-                      .semesterLength;
+    return SignalBuilder(
+          builder: (context) {
+            final controller = home.HomepageController.i;
+            final classTableController = ClassTableController.i;
+            final arrangementState =
+                controller.homepageArrangementStateComputedSignal.value;
+            final arrangements = controller.arrangementComputedSignal.value;
+            final isTomorrow = controller.isTomorrowComputedSignal.value;
+            final updateTime = controller.updateTimeComputedSignal.value;
+            final displayTime = isTomorrow
+                ? updateTime.add(const Duration(days: 1))
+                : updateTime;
+            final isAllSourcesLoading =
+                controller.isAllSourcesLoadingComputedSignal.value;
+            final isPartialSourcesLoading =
+                controller.isPartialSourcesLoadingComputedSignal.value;
+            final failedSources = controller.failedSourcesComputedSignal.value;
+            final havePhysicsExperiment =
+                controller.havePhysicsExperimentSignal.value;
+            final isPostGraduate = controller.isPostGraduate;
+            final currentWeek = classTableController.getCurrentWeek(
+              displayTime,
+            );
+            final semesterLength = classTableController
+                .classTableComputedSignal
+                .value
+                .semesterLength;
 
-                  return [
-                    _StateList(
-                      isAllSourcesLoading: isAllSourcesLoading,
-                      isPartialSourcesLoading: isPartialSourcesLoading,
-                      failedSources: failedSources,
-                      havePhysicsExperiment: havePhysicsExperiment,
-                      isPostGraduate: isPostGraduate,
-                    ),
-                    _ClassArrangementListView(
-                      arrangements: arrangements,
-                      isTomorrow: isTomorrow,
-                      emptyInfoText: _getEmptyInfoText(arrangementState),
-                      arrangementState: arrangementState,
-                      displayTime: displayTime,
-                      currentWeek: currentWeek,
-                      semesterLength: semesterLength,
-                    ),
-                  ].whereType<Widget>().toList().toColumn(
-                    separator: const SizedBox(height: 10),
-                  );
-                },
-              )
-              .paddingDirectional(horizontal: 16, vertical: 8)
-              .withHomeCardStyle(
-                context,
-                onPressed: () {
-                  context.pushReplacementNamed(Routes.classTable);
-                },
+            return [
+              _StateList(
+                isAllSourcesLoading: isAllSourcesLoading,
+                isPartialSourcesLoading: isPartialSourcesLoading,
+                failedSources: failedSources,
+                havePhysicsExperiment: havePhysicsExperiment,
+                isPostGraduate: isPostGraduate,
               ),
-    );
+              _ClassArrangementListView(
+                arrangements: arrangements,
+                isTomorrow: isTomorrow,
+                emptyInfoText: _getEmptyInfoText(arrangementState),
+                arrangementState: arrangementState,
+                displayTime: displayTime,
+                currentWeek: currentWeek,
+                semesterLength: semesterLength,
+              ),
+            ].whereType<Widget>().toList().toColumn(
+              separator: const SizedBox(height: 10),
+            );
+          },
+        )
+        .paddingDirectional(horizontal: 16, vertical: 8)
+        .withHomeCardStyle(
+          context,
+          onPressed: () {
+            context.pushReplacementNamed(Routes.classTable);
+          },
+        );
   }
 }
 

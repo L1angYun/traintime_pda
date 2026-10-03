@@ -26,11 +26,8 @@ import 'package:watermeter/page/classtable/classtable_state.dart';
 import 'package:watermeter/page/classtable/class_page/not_arranged_class_list.dart';
 import 'package:watermeter/page/classtable/class_page/week_choice_view.dart';
 import 'package:watermeter/page/public_widget/toast.dart';
-import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/repository/network_client.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
-
-const _classTableHeaderHeroTag = 'classtable-header';
 
 class ContentClassTablePage extends StatefulWidget {
   const ContentClassTablePage({super.key});
@@ -1021,37 +1018,24 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
             /// The background image is drawn behind everything, so the
             /// decorated area still reaches the edges of the screen while the
             /// sheet below respects the safe area.
-            Positioned.fill(
-              child: containerTransformTarget(
-                tag: _classTableHeaderHeroTag,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColoredBox(color: Theme.of(context).colorScheme.surface),
-                    _backgroundLayer(context),
-                  ],
+            _backgroundLayer(context),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                PreferredSize(
+                  preferredSize: Size.fromHeight(
+                    MediaQuery.sizeOf(context).height >= 500
+                        ? topRowHeightBig
+                        : topRowHeightSmall,
+                  ),
+                  child: _topView(),
                 ),
-              ),
-            ),
-            ContainerTransformPageFade(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  PreferredSize(
-                    preferredSize: Size.fromHeight(
-                      MediaQuery.sizeOf(context).height >= 500
-                          ? topRowHeightBig
-                          : topRowHeightSmall,
-                    ),
-                    child: _topView(),
-                  ),
-                  ClassTableInlineBanner(
-                    loadingSources: state.loadingSources,
-                    cacheSources: state.cacheSources,
-                  ),
-                  _sheet(context).expanded(),
-                ],
-              ),
+                ClassTableInlineBanner(
+                  loadingSources: state.loadingSources,
+                  cacheSources: state.cacheSources,
+                ),
+                _sheet(context).expanded(),
+              ],
             ),
           ],
         ),
