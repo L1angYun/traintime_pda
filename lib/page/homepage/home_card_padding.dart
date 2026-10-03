@@ -73,6 +73,8 @@ extension HomeCardPadding on Widget {
             ? null
             : () {
                 ContainerTransformSource.pending = null;
+                // 顺手抓一张首页缩略图给转场当背景模糊用（很便宜）。
+                unawaited(captureContainerTransformBackground());
                 // Use the whole BasedSplitView's available width, not the
                 // left card column's width (364 in the default two-column UI).
                 final splitContext = sourceContext

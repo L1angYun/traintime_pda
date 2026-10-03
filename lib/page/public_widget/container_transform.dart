@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -28,6 +31,26 @@ class ContainerTransformSource {
   }
 }
 
+/// 背景缩略图：把首页**降采样**抓一张极小的图，显示时放大铺满 ——
+/// 放大时的插值本身就糊了，看起来接近高斯模糊，但每帧只是画一张图，
+/// 不像全屏 BackdropFilter 那样每帧重新采样背景（那个在课表上直接掉帧）。
+/// 就是 HyperOS / MIUI 那类用缩略图替代模糊的省算力做法。
+final GlobalKey containerTransformBackgroundKey = GlobalKey();
+ui.Image? _backgroundThumb;
+
+/// 跳转前调用：抓一张首页的小图。失败就静静放弃，退回纯压暗。
+Future<void> captureContainerTransformBackground() async {
+  final boundary =
+      containerTransformBackgroundKey.currentContext?.findRenderObject();
+  if (boundary is! RenderRepaintBoundary) return;
+  try {
+    final image = await boundary.toImage(pixelRatio: 0.12);
+    _backgroundThumb?.dispose();
+    _backgroundThumb = image;
+  } catch (_) {
+    // 抓不到就算了，别把跳转搞挂。
+  }
+}
 /// 打开页面时下面那层（首页）缩一点、带点圆角，也就是 iOS / HyperOS 那种"下沉"。
 ///
 /// 首页在另一个 Navigator 里，路由碰不到它，所以用一个全局值让它自己动：
@@ -167,11 +190,22 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                 children: [
                   // 驱动首页那层的"下沉"（首页在另一个 Navigator，只能靠全局值联动）。
                   _SinkDriver(animation: animation),
-                  // 只压暗，不做高斯模糊：全屏 BackdropFilter 每帧都要重新采样背景，
-                  // 在课表这种重页面上会明显掉帧（骁龙 8e5 都掉），得不偿失。
+                  // 背景：先画那张降采样缩略图（放大后自然发糊），再压一层暗。
+                  // 抓不到缩略图时就是纯压暗，不会报错。
                   Positioned.fill(
-                    child: ColoredBox(
-                      color: Colors.black.withValues(alpha: 0.12 * t),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (_backgroundThumb != null)
+                          RawImage(
+                            image: _backgroundThumb,
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.low,
+                          ),
+                        ColoredBox(
+                          color: Colors.black.withValues(alpha: 0.16 * t),
+                        ),
+                      ],
                     ),
                   ),
                   // 页面**等比铺满**正在长大的窗口（BoxFit.cover）：
