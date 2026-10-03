@@ -8,6 +8,7 @@ import 'package:watermeter/page/classtable/classtable.dart';
 import 'package:watermeter/page/dorm_water/dorm_water_window.dart';
 import 'package:watermeter/page/empty_classroom/empty_classroom_window.dart';
 import 'package:watermeter/page/energy/electricity_window.dart';
+import 'package:watermeter/page/energy/aircon_remote_page.dart';
 import 'package:watermeter/page/exam/exam_info_window.dart';
 import 'package:watermeter/page/experiment/experiment_window.dart';
 import 'package:watermeter/page/library/library_window.dart';
@@ -34,6 +35,7 @@ class Routes {
   static const schoolCard = '/school-card';
   static const library = '/library';
   static const electricity = "/electricity";
+  static const aircon = "/aircon";
 
   static Widget _resolve(String name, Object? arguments) {
     return switch (name) {
@@ -53,18 +55,41 @@ class Routes {
       schoolCard => const SchoolCardWindow(),
       library => const LibraryWindow(),
       electricity => const ElectricityWindow(),
+      aircon => const AirconRemotePage(),
       _ => const SizedBox.shrink(),
     };
   }
 
-  /// Build a [MaterialPageRoute] from a registered route name.
+  /// Build a [PageRouteBuilder] from a registered route name.
   static Route<T> resolveRoute<T extends Object?>(
     String name, {
     Object? arguments,
   }) {
-    return MaterialPageRoute<T>(
+    return PageRouteBuilder<T>(
       settings: RouteSettings(name: name, arguments: arguments),
-      builder: (_) => _resolve(name, arguments),
+      transitionDuration: const Duration(milliseconds: 280),
+      reverseTransitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (_, _, _) => _resolve(name, arguments),
+      transitionsBuilder: (_, animation, _, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.025),
+              end: Offset.zero,
+            ).animate(curved),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.985, end: 1).animate(curved),
+              child: child,
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -17,6 +17,8 @@ import 'package:watermeter/page/public_widget/context_extension.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
 import 'package:watermeter/themes/color_seed.dart';
 
+const _classTableHeaderHeroTag = 'classtable-header';
+
 class ClassTableCard extends StatefulWidget {
   const ClassTableCard({super.key});
 
@@ -98,14 +100,17 @@ class _ClassTableCardState extends State<ClassTableCard> {
                 havePhysicsExperiment: havePhysicsExperiment,
                 isPostGraduate: isPostGraduate,
               ),
-              _ClassArrangementListView(
-                arrangements: arrangements,
-                isTomorrow: isTomorrow,
-                emptyInfoText: _getEmptyInfoText(arrangementState),
-                arrangementState: arrangementState,
-                displayTime: displayTime,
-                currentWeek: currentWeek,
-                semesterLength: semesterLength,
+              Hero(
+                tag: _classTableHeaderHeroTag,
+                child: _ClassArrangementListView(
+                  arrangements: arrangements,
+                  isTomorrow: isTomorrow,
+                  emptyInfoText: _getEmptyInfoText(arrangementState),
+                  arrangementState: arrangementState,
+                  displayTime: displayTime,
+                  currentWeek: currentWeek,
+                  semesterLength: semesterLength,
+                ),
               ),
             ].whereType<Widget>().toList().toColumn(
               separator: const SizedBox(height: 10),

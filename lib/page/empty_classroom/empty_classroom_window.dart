@@ -10,6 +10,8 @@ import 'package:watermeter/page/empty_classroom/empty_classroom_search_window.da
 import 'package:watermeter/page/public_widget/public_widget.dart';
 import 'package:watermeter/repository/ids_session/empty_classroom_session.dart';
 
+const _emptyClassroomHeaderHeroTag = 'empty-classroom-header';
+
 class EmptyClassroomWindow extends StatefulWidget {
   const EmptyClassroomWindow({super.key});
 
@@ -30,7 +32,15 @@ class _EmptyClassroomWindowState extends State<EmptyClassroomWindow> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(FlutterI18n.translate(context, "empty_classroom.title")),
+        title: Hero(
+          tag: _emptyClassroomHeaderHeroTag,
+          child: Material(
+            color: Colors.transparent,
+            child: Text(
+              FlutterI18n.translate(context, "empty_classroom.title"),
+            ),
+          ),
+        ),
       ),
       body: FutureBuilder(
         future: places,

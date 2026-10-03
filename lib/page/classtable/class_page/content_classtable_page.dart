@@ -29,6 +29,8 @@ import 'package:watermeter/page/public_widget/toast.dart';
 import 'package:watermeter/repository/network_client.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
 
+const _classTableHeaderHeroTag = 'classtable-header';
+
 class ContentClassTablePage extends StatefulWidget {
   const ContentClassTablePage({super.key});
 
@@ -211,50 +213,55 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
   /// When user click on the button, the pageview will show the class table of the
   /// week the button suggested.
   Widget _topView() {
-    return SizedBox(
-      /// Related to the overview of the week.
-      height: MediaQuery.sizeOf(context).height >= 500
-          ? topRowHeightBig
-          : topRowHeightSmall,
+    return Hero(
+      tag: _classTableHeaderHeroTag,
+      child: SizedBox(
+        /// Related to the overview of the week.
+        height: MediaQuery.sizeOf(context).height >= 500
+            ? topRowHeightBig
+            : topRowHeightSmall,
 
-      child: Container(
-        padding: const EdgeInsets.only(top: 2, bottom: 4),
-        color: Theme.of(context).colorScheme.surface,
-        child: PageView.builder(
-          padEnds: false,
-          controller: rowControl,
-          physics: const ClampingScrollPhysics(),
-          scrollDirection: Axis.horizontal,
-          itemCount: classTableState.semesterLength,
-          itemBuilder: (BuildContext context, int index) {
-            return Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: weekButtonHorizontalPadding,
-              ),
-              child: SizedBox(
-                width: weekButtonWidth,
-                child: Card(
-                  color: Theme.of(context).highlightColor.withValues(
-                    alpha: classTableState.chosenWeek == index ? 0.3 : 0.0,
-                  ),
-                  elevation: 0.0,
-                  child: InkWell(
-                    /// The following themes are the same as the Material 3 Card Radius.
-                    borderRadius: const BorderRadius.all(Radius.circular(12.0)),
-                    onTap: () {
-                      if (isTopRowLocked == false) {
-                        classTableState.chosenWeek = index;
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: WeekChoiceView(index: index),
+        child: Container(
+          padding: const EdgeInsets.only(top: 2, bottom: 4),
+          color: Theme.of(context).colorScheme.surface,
+          child: PageView.builder(
+            padEnds: false,
+            controller: rowControl,
+            physics: const ClampingScrollPhysics(),
+            scrollDirection: Axis.horizontal,
+            itemCount: classTableState.semesterLength,
+            itemBuilder: (BuildContext context, int index) {
+              return Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: weekButtonHorizontalPadding,
+                ),
+                child: SizedBox(
+                  width: weekButtonWidth,
+                  child: Card(
+                    color: Theme.of(context).highlightColor.withValues(
+                      alpha: classTableState.chosenWeek == index ? 0.3 : 0.0,
+                    ),
+                    elevation: 0.0,
+                    child: InkWell(
+                      /// The following themes are the same as the Material 3 Card Radius.
+                      borderRadius: const BorderRadius.all(
+                        Radius.circular(12.0),
+                      ),
+                      onTap: () {
+                        if (isTopRowLocked == false) {
+                          classTableState.chosenWeek = index;
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: WeekChoiceView(index: index),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

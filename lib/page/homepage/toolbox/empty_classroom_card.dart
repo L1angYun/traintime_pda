@@ -11,24 +11,29 @@ import 'package:watermeter/repository/ids_session/ids_session.dart';
 import 'package:watermeter/page/homepage/small_function_card.dart';
 import 'package:watermeter/routing/routes.dart';
 
+const _emptyClassroomHeaderHeroTag = 'empty-classroom-header';
+
 class EmptyClassroomCard extends StatelessWidget {
   const EmptyClassroomCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SmallFunctionCard(
-      onPressed: () async {
-        if (offline) {
-          showToast(
-            context: context,
-            msg: FlutterI18n.translate(context, "homepage.offline_mode"),
-          );
-        } else {
-          context.pushReplacementNamed(Routes.emptyClassroom);
-        }
-      },
-      icon: MingCuteIcons.mgc_building_2_line,
-      nameKey: "homepage.toolbox.empty_classroom",
+    return Hero(
+      tag: _emptyClassroomHeaderHeroTag,
+      child: SmallFunctionCard(
+        onPressed: () async {
+          if (offline) {
+            showToast(
+              context: context,
+              msg: FlutterI18n.translate(context, "homepage.offline_mode"),
+            );
+          } else {
+            context.pushReplacementNamed(Routes.emptyClassroom);
+          }
+        },
+        icon: MingCuteIcons.mgc_building_2_line,
+        nameKey: "homepage.toolbox.empty_classroom",
+      ),
     );
   }
 }
