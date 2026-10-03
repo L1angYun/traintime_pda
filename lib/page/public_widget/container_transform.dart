@@ -1,6 +1,7 @@
 // Copyright 2026 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -67,24 +68,39 @@ Future<void> captureContainerTransformBackground() async {
 /// 路由的转场驱动这个值，首页用 [ContainerTransformSink] 监听。
 final ValueNotifier<double> containerTransformSink = ValueNotifier<double>(0);
 
-/// 包在首页外面，跟着 [containerTransformSink] 缩放。
-class ContainerTransformSink extends StatelessWidget {
+/// 包在首页外面：跟着 [containerTransformSink] 缩放，
+/// 并且在首页画完第一帧后**提前**把背景缩略图抓好 ——
+/// 这样点卡片时图已经在了，不会出现"动画开始后图才啪一下出现"的断裂感。
+class ContainerTransformSink extends StatefulWidget {
   const ContainerTransformSink({super.key, required this.child});
 
   final Widget child;
 
   @override
+  State<ContainerTransformSink> createState() => _ContainerTransformSinkState();
+}
+
+class _ContainerTransformSinkState extends State<ContainerTransformSink> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(captureContainerTransformBackground());
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<double>(
       valueListenable: containerTransformSink,
-      child: child,
+      child: widget.child,
       builder: (context, value, child) {
         if (value <= 0.001) return child!;
         return ColoredBox(
           // 缩下去之后后面不能是黑的：先铺一层 App 自己的底色。
           color: Theme.of(context).scaffoldBackgroundColor,
           child: Transform.scale(
-            scale: 1 - 0.03 * value,
+            scale: 1 - 0.05 * value,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16 * value),
               child: child,
@@ -221,7 +237,7 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                             ),
                           ),
                         ColoredBox(
-                          color: Colors.black.withValues(alpha: 0.16 * t),
+                          color: Colors.black.withValues(alpha: 0.10 * t),
                         ),
                       ],
                     ),
