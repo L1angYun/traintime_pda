@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -28,35 +29,12 @@ class ContainerTransformSource {
   }
 }
 
-/// A small center arc keeps the expanding container from feeling mechanical.
+/// 直线插值，不要走弧线。
+///
+/// 之前这里做过"中心弧线"，结果长条形的卡片打开时会明显左右抽动
+/// （卡片越长横向偏移越大）。参考里说的非线性是**时间曲线**，不是空间路径。
 class ContainerTransformRectTween extends RectTween {
   ContainerTransformRectTween({super.begin, super.end});
-
-  @override
-  Rect? lerp(double t) {
-    final start = begin;
-    final finish = end;
-    if (start == null || finish == null) return super.lerp(t);
-
-    final startCenter = start.center;
-    final endCenter = finish.center;
-    final delta = endCenter - startCenter;
-    final distance = delta.distance;
-    final normal = distance == 0
-        ? Offset.zero
-        : Offset(-delta.dy / distance, delta.dx / distance);
-    final control =
-        Offset.lerp(startCenter, endCenter, 0.5)! +
-        normal * math.min(distance * 0.12, 72.0);
-    final first = Offset.lerp(startCenter, control, t)!;
-    final center = Offset.lerp(first, Offset.lerp(control, endCenter, t)!, t)!;
-    final size = Size.lerp(start.size, finish.size, t)!;
-    return Rect.fromCenter(
-      center: center,
-      width: size.width,
-      height: size.height,
-    );
-  }
 }
 
 PageRouteBuilder<T> containerTransformRoute<T>({
@@ -107,9 +85,7 @@ PageRouteBuilder<T> containerTransformRoute<T>({
           final endRadius = BorderRadius.circular(screenRadius);
           return AnimatedBuilder(
             animation: animation,
-            // Layout is always full-screen, including the very first frame.
-            // FittedBox only maps that real page into the growing rectangle;
-            // neither the page nor the source is faded or re-laid-out per tick.
+            // 页面按整屏尺寸构建（第一帧就是），下面只裁不缩。
             child: SizedBox(
               width: size.width,
               height: size.height,
@@ -117,12 +93,25 @@ PageRouteBuilder<T> containerTransformRoute<T>({
             ),
             builder: (context, page) {
               final raw = animation.value;
-              // 收尾这一帧直接交还真页面：否则会从"裁剪+缩放版"切到真页面，
+              // 收尾这一帧直接交还真页面：否则会从"裁剪版"切到真页面，
               // 中间闪一下底下的首页。
               if (raw >= 0.999) return page!;
               final t = Curves.fastOutSlowIn.transform(raw);
               return Stack(
                 children: [
+                  // 打开时把下面那层（首页）虚化并压暗一点，
+                  // 就是 iOS / HyperOS 桌面打开应用那个味道。
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(
+                        sigmaX: 10 * t,
+                        sigmaY: 10 * t,
+                      ),
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: 0.16 * t),
+                      ),
+                    ),
+                  ),
                   Positioned.fromRect(
                     rect: rectTween.lerp(t)!,
                     child: ClipRRect(
@@ -131,11 +120,19 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                         endRadius,
                         t,
                       )!,
-                      // 页面自己还没画出内容时，先铺页面底色，
-                      // 免得正在长大的矩形里透出底下的首页。
+                      // 关键：页面保持整屏尺寸，只被"长大的矩形"裁切 ——
+                      // 之前用 FittedBox(fit: fill) 会把整页硬压进小矩形，
+                      // 比例全变，看起来像被压缩。
                       child: ColoredBox(
                         color: Theme.of(context).scaffoldBackgroundColor,
-                        child: FittedBox(fit: BoxFit.fill, child: page),
+                        child: OverflowBox(
+                          alignment: Alignment.topLeft,
+                          minWidth: size.width,
+                          maxWidth: size.width,
+                          minHeight: size.height,
+                          maxHeight: size.height,
+                          child: page,
+                        ),
                       ),
                     ),
                   ),
