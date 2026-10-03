@@ -106,6 +106,25 @@ class ContainerTransformRectTween extends RectTween {
   ContainerTransformRectTween({super.begin, super.end});
 }
 
+/// 「正在长大的窗口」：从控件的位置长到整屏，带圆角。
+///
+/// 页面本身尺寸恒定，只有这个窗口在动 —— 每帧只是换一个裁切形状，
+/// 不会引起子树重新布局。
+class _TransformWindowClipper extends CustomClipper<Path> {
+  const _TransformWindowClipper({required this.rect, required this.radius});
+
+  final Rect rect;
+  final BorderRadius radius;
+
+  @override
+  Path getClip(Size size) =>
+      Path()..addRRect(RRect.fromRectAndRadius(rect, radius.topLeft));
+
+  @override
+  bool shouldReclip(_TransformWindowClipper oldClipper) =>
+      oldClipper.rect != rect || oldClipper.radius != radius;
+}
+
 PageRouteBuilder<T> containerTransformRoute<T>({
   required WidgetBuilder builder,
   Rect? fromRect,
@@ -173,6 +192,12 @@ PageRouteBuilder<T> containerTransformRoute<T>({
               // 中间闪一下底下的首页。
               if (raw >= 0.999) return page!;
               final t = Curves.fastOutSlowIn.transform(raw);
+              final window = rectTween.lerp(t)!;
+              // 等比铺满窗口所需的最小缩放（相当于 BoxFit.cover）。
+              final coverScale = math.max(
+                window.width / size.width,
+                window.height / size.height,
+              );
               return Stack(
                 children: [
                   // 驱动首页那层的"下沉"（首页在另一个 Navigator，只能靠全局值联动）。
@@ -200,30 +225,35 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                       ],
                     ),
                   ),
-                  // 页面**等比铺满**正在长大的窗口（BoxFit.cover）：
-                  //   fill    —— 会压扁；contain —— 长条形卡片两边留白太多；
-                  //   cover   —— 既不压扁也不留白，正是参考录屏里的做法。
-                  // 窗口本身从控件的位置长到整屏，看起来就是从那张卡片里长出来的。
-                  // RepaintBoundary 很关键：窗口每帧都在变，
-                  // 没有它，下面这个重页面（比如课表）会被逼着每帧重绘。
-                  Positioned.fromRect(
-                    rect: rectTween.lerp(t)!,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.lerp(
-                        startRadius,
-                        endRadius,
-                        t,
-                      )!,
-                      child: ColoredBox(
-                        color: Theme.of(context).scaffoldBackgroundColor,
+                  // 页面**等比铺满**正在长大的窗口（相当于 BoxFit.cover），
+                  // 但不用 FittedBox：矩形每帧都在变，FittedBox 的约束也就每帧在变，
+                  // 会把下面这棵重页面（课表几百个 widget）逼着**每帧重新布局**。
+                  // 这里改成：页面尺寸恒定（整屏，只布局一次），
+                  // 每帧只改变换矩阵与裁切矩形 —— 纯合成，不重排。
+                  Positioned.fill(
+                    child: ClipPath(
+                      clipper: _TransformWindowClipper(
+                        rect: rectTween.lerp(t)!,
+                        radius: BorderRadius.lerp(
+                          startRadius,
+                          endRadius,
+                          t,
+                        )!,
+                      ),
+                      child: Transform(
+                        alignment: Alignment.topLeft,
+                        transform: Matrix4.identity()
+                          ..translateByDouble(
+                            window.center.dx - size.width * coverScale / 2,
+                            window.center.dy - size.height * coverScale / 2,
+                            0,
+                            1,
+                          )
+                          ..scaleByDouble(coverScale, coverScale, 1, 1),
                         child: RepaintBoundary(
-                          child: FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: size.width,
-                              height: size.height,
-                              child: page,
-                            ),
+                          child: ColoredBox(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            child: page,
                           ),
                         ),
                       ),

@@ -69,13 +69,15 @@ class Routes {
   }) {
     final source = ContainerTransformSource.consume();
     final settings = RouteSettings(name: name, arguments: arguments);
-    final builder = (_) => _resolve(name, arguments);
     if (source == null) {
-      return MaterialPageRoute<T>(settings: settings, builder: builder);
+      return MaterialPageRoute<T>(
+        settings: settings,
+        builder: (_) => _resolve(name, arguments),
+      );
     }
     return containerTransformRoute<T>(
       settings: settings,
-      builder: builder,
+      builder: (_) => _resolve(name, arguments),
       fromRect: source.fromRect,
       fromRadius: source.fromRadius,
     );
