@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:watermeter/page/homepage/home_card_padding.dart';
-import 'package:watermeter/page/public_widget/container_transform.dart';
 
 class MainPageCard extends StatelessWidget {
   final bool isLoad;
@@ -42,17 +41,6 @@ class MainPageCard extends StatelessWidget {
         : Theme.of(context).brightness == Brightness.dark
         ? Theme.of(context).colorScheme.onSurface
         : Theme.of(context).colorScheme.onSurfaceVariant;
-    final transformedOnPressed = onPressed == null || !enableContainerTransform
-        ? onPressed
-        : () => unawaited(
-            runContainerTransform(
-              context,
-              open: () async {
-                await onPressed!();
-                return null;
-              },
-            ),
-          );
 
     return ListTile(
       leading: Icon(
@@ -81,6 +69,11 @@ class MainPageCard extends StatelessWidget {
         },
       ),
       trailing: rightButton,
-    ).withHomeCardStyle(context, onPressed: transformedOnPressed, type: type);
+    ).withHomeCardStyle(
+      context,
+      onPressed: onPressed,
+      enableContainerTransform: enableContainerTransform,
+      type: type,
+    );
   }
 }
