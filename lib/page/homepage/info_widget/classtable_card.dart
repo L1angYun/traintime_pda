@@ -100,17 +100,14 @@ class _ClassTableCardState extends State<ClassTableCard> {
                 havePhysicsExperiment: havePhysicsExperiment,
                 isPostGraduate: isPostGraduate,
               ),
-              Hero(
-                tag: _classTableHeaderHeroTag,
-                child: _ClassArrangementListView(
-                  arrangements: arrangements,
-                  isTomorrow: isTomorrow,
-                  emptyInfoText: _getEmptyInfoText(arrangementState),
-                  arrangementState: arrangementState,
-                  displayTime: displayTime,
-                  currentWeek: currentWeek,
-                  semesterLength: semesterLength,
-                ),
+              _ClassArrangementListView(
+                arrangements: arrangements,
+                isTomorrow: isTomorrow,
+                emptyInfoText: _getEmptyInfoText(arrangementState),
+                arrangementState: arrangementState,
+                displayTime: displayTime,
+                currentWeek: currentWeek,
+                semesterLength: semesterLength,
               ),
             ].whereType<Widget>().toList().toColumn(
               separator: const SizedBox(height: 10),
@@ -149,100 +146,103 @@ class _ClassArrangementListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return [
-      [
-        Icon(Icons.calendar_month, size: 32),
-        SizedBox(width: 18),
-        [
-          DefaultTextStyle(
-            style: TextStyle(
-              fontSize: 20,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            child: Builder(
-              builder: (context) {
-                if (isTomorrow) {
+      Hero(
+        tag: _classTableHeaderHeroTag,
+        child: [
+          Icon(Icons.calendar_month, size: 32),
+          SizedBox(width: 18),
+          [
+            DefaultTextStyle(
+              style: TextStyle(
+                fontSize: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              child: Builder(
+                builder: (context) {
+                  if (isTomorrow) {
+                    if (arrangements.isEmpty) {
+                      return Text(
+                        FlutterI18n.translate(
+                          context,
+                          "homepage.class_table_card.tomorrow_none",
+                        ),
+                      );
+                    }
+                    return Text(
+                      FlutterI18n.translate(
+                        context,
+                        "homepage.class_table_card.tomorrow",
+                        translationParams: {
+                          "remain": arrangements.length.toString(),
+                        },
+                      ),
+                    );
+                  }
                   if (arrangements.isEmpty) {
                     return Text(
                       FlutterI18n.translate(
                         context,
-                        "homepage.class_table_card.tomorrow_none",
+                        "homepage.class_table_card.today_finished",
                       ),
                     );
                   }
                   return Text(
                     FlutterI18n.translate(
                       context,
-                      "homepage.class_table_card.tomorrow",
+                      "homepage.class_table_card.today",
                       translationParams: {
                         "remain": arrangements.length.toString(),
                       },
                     ),
                   );
-                }
-                if (arrangements.isEmpty) {
-                  return Text(
-                    FlutterI18n.translate(
+                },
+              ),
+            ),
+            DefaultTextStyle(
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              child: Builder(
+                builder: (context) {
+                  String timeString = DateFormat(
+                    "MMMd",
+                    FlutterI18n.currentLocale(context).toString(),
+                  ).format(displayTime);
+
+                  String weekString = DateFormat(
+                    "E",
+                    FlutterI18n.currentLocale(context).toString(),
+                  ).format(displayTime);
+
+                  String weekInfo =
+                      currentWeek >= 0 && currentWeek < semesterLength
+                      ? FlutterI18n.translate(
+                          context,
+                          "homepage.class_table_card.week_info",
+                          translationParams: {"weekinfo": "${currentWeek + 1}"},
+                        )
+                      : FlutterI18n.translate(
+                          context,
+                          "homepage.class_table_card.on_holiday",
+                        );
+
+                  String toShow = switch (arrangementState) {
+                    home.ArrangementState.fetched =>
+                      "$timeString $weekString $weekInfo",
+                    home.ArrangementState.error => FlutterI18n.translate(
                       context,
-                      "homepage.class_table_card.today_finished",
+                      "homepage.load_error",
                     ),
-                  );
-                }
-                return Text(
-                  FlutterI18n.translate(
-                    context,
-                    "homepage.class_table_card.today",
-                    translationParams: {
-                      "remain": arrangements.length.toString(),
-                    },
-                  ),
-                );
-              },
+                    _ => FlutterI18n.translate(context, "homepage.loading"),
+                  };
+                  return Text(toShow);
+                },
+              ),
             ),
-          ),
-          DefaultTextStyle(
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            child: Builder(
-              builder: (context) {
-                String timeString = DateFormat(
-                  "MMMd",
-                  FlutterI18n.currentLocale(context).toString(),
-                ).format(displayTime);
-
-                String weekString = DateFormat(
-                  "E",
-                  FlutterI18n.currentLocale(context).toString(),
-                ).format(displayTime);
-
-                String weekInfo =
-                    currentWeek >= 0 && currentWeek < semesterLength
-                    ? FlutterI18n.translate(
-                        context,
-                        "homepage.class_table_card.week_info",
-                        translationParams: {"weekinfo": "${currentWeek + 1}"},
-                      )
-                    : FlutterI18n.translate(
-                        context,
-                        "homepage.class_table_card.on_holiday",
-                      );
-
-                String toShow = switch (arrangementState) {
-                  home.ArrangementState.fetched =>
-                    "$timeString $weekString $weekInfo",
-                  home.ArrangementState.error => FlutterI18n.translate(
-                    context,
-                    "homepage.load_error",
-                  ),
-                  _ => FlutterI18n.translate(context, "homepage.loading"),
-                };
-                return Text(toShow);
-              },
-            ),
-          ),
-        ].toColumn(crossAxisAlignment: CrossAxisAlignment.start),
-      ].toRow(),
+          ].toColumn(crossAxisAlignment: CrossAxisAlignment.start),
+        ].toRow(),
+      ),
       SizedBox(height: 8),
       if (arrangements.isEmpty)
         Text(

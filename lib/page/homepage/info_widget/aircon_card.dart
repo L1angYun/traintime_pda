@@ -1,13 +1,13 @@
 // Copyright 2026 Traintime PDA authors.
 // SPDX-License-Identifier: MPL-2.0
 
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:watermeter/controller/aircon_controller.dart';
-import 'package:watermeter/routing/routes.dart';
 import 'package:watermeter/page/homepage/main_page_card.dart';
 import 'package:watermeter/page/public_widget/context_extension.dart';
+import 'package:watermeter/routing/routes.dart';
 
 const _airconTemperatureModeHeroTag = 'aircon-temperature-mode';
 

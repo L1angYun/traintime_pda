@@ -43,6 +43,9 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   Object? _error;
   bool _isFetching = false;
   bool Function(AirconState state)? _pendingMatches;
+  int _generation = 0;
+  late String _lastImei;
+  late final void Function() _disposeImeiEffect;
 
   static const _pollInterval = Duration(milliseconds: 300);
   static const _pollAttempts = 12;
@@ -50,8 +53,29 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   @override
   void initState() {
     super.initState();
+    _lastImei = _controller.imeiSignal.peek();
     _state = _controller.deviceStateSignal.peek().value;
+    _disposeImeiEffect = effect(() {
+      final imei = _controller.imeiSignal.value;
+      if (imei == _lastImei) return;
+      _lastImei = imei;
+      _generation++;
+      if (!mounted) return;
+      setState(() {
+        _state = null;
+        _error = null;
+        _pendingMatches = null;
+        _isFetching = false;
+      });
+      if (imei.isNotEmpty) Future.microtask(_refreshDeviceState);
+    });
     Future.microtask(_refreshDeviceState);
+  }
+
+  @override
+  void dispose() {
+    _disposeImeiEffect();
+    super.dispose();
   }
 
   Future<void> _configure() async {
@@ -60,9 +84,12 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
       builder: (context) => const AirconImeiDialog(),
     );
     if (!mounted) return;
+    _generation++;
     setState(() {
       _state = null;
       _error = null;
+      _pendingMatches = null;
+      _isFetching = false;
     });
     await _refreshDeviceState();
   }
@@ -70,6 +97,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   Future<void> _refreshDeviceState() async {
     final imei = _controller.imeiSignal.value;
     if (imei.isEmpty || _isFetching) return;
+    final generation = ++_generation;
 
     setState(() {
       _isFetching = true;
@@ -79,12 +107,16 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
     try {
       final state = await _controller.session.getDeviceState(imei);
       if (!mounted) return;
+      if (generation != _generation) return;
       if (imei != _controller.imeiSignal.value) {
         setState(() {
           _isFetching = false;
           _pendingMatches = null;
         });
         return;
+      }
+      if (state.imei != imei) {
+        throw const AirconResponseException("设备状态归属不匹配");
       }
 
       final matches = _pendingMatches;
@@ -109,9 +141,18 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
       _controller.setDeviceState(state);
     } catch (error) {
       if (!mounted) return;
+      if (generation != _generation) return;
+      if (imei != _controller.imeiSignal.value) {
+        setState(() {
+          _isFetching = false;
+          _pendingMatches = null;
+        });
+        return;
+      }
       setState(() {
         _error = error;
         _isFetching = false;
+        _pendingMatches = null;
       });
     }
   }
@@ -129,6 +170,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
         _isFetching) {
       return;
     }
+    final generation = ++_generation;
 
     HapticFeedback.selectionClick();
     setState(() {
@@ -148,6 +190,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
       for (var attempt = 0; attempt < _pollAttempts; attempt++) {
         if (attempt > 0) await Future<void>.delayed(_pollInterval);
         if (!mounted) return;
+        if (generation != _generation) return;
         if (imei != _controller.imeiSignal.value) {
           setState(() {
             _isFetching = false;
@@ -158,7 +201,16 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
 
         try {
           final state = await _controller.session.getDeviceState(imei);
-          if (matches(state)) {
+          if (!mounted) return;
+          if (generation != _generation) return;
+          if (imei != _controller.imeiSignal.value) {
+            setState(() {
+              _isFetching = false;
+              _pendingMatches = null;
+            });
+            return;
+          }
+          if (state.imei == imei && matches(state)) {
             confirmedState = state;
             break;
           }
@@ -168,6 +220,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
       }
 
       if (!mounted) return;
+      if (generation != _generation) return;
       if (imei != _controller.imeiSignal.value) {
         setState(() {
           _isFetching = false;
@@ -192,6 +245,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
       );
     } catch (error) {
       if (!mounted) return;
+      if (generation != _generation) return;
       if (imei != _controller.imeiSignal.value) {
         setState(() {
           _isFetching = false;
@@ -450,26 +504,33 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 2,
                 left: 4,
-                child: IconButton(
-                  onPressed: _isFetching ? null : _refreshDeviceState,
-                  tooltip: FlutterI18n.translate(context, "electricity.update"),
-                  color: scheme.onSurfaceVariant,
-                  icon: const Icon(Icons.refresh),
+                child: _PressScaleFeedback(
+                  child: IconButton(
+                    onPressed: _isFetching ? null : _refreshDeviceState,
+                    tooltip: FlutterI18n.translate(
+                      context,
+                      "electricity.update",
+                    ),
+                    color: scheme.onSurfaceVariant,
+                    icon: const Icon(Icons.refresh),
+                  ),
                 ),
               ),
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 2,
                 right: 4,
-                child: IconButton(
-                  onPressed: _isFetching || _pendingMatches != null
-                      ? null
-                      : _configure,
-                  tooltip: FlutterI18n.translate(
-                    context,
-                    "setting.aircon_imei_title",
+                child: _PressScaleFeedback(
+                  child: IconButton(
+                    onPressed: _isFetching || _pendingMatches != null
+                        ? null
+                        : _configure,
+                    tooltip: FlutterI18n.translate(
+                      context,
+                      "setting.aircon_imei_title",
+                    ),
+                    color: scheme.onSurfaceVariant,
+                    icon: const Icon(Icons.settings_outlined),
                   ),
-                  color: scheme.onSurfaceVariant,
-                  icon: const Icon(Icons.settings_outlined),
                 ),
               ),
               if (busy)
@@ -655,7 +716,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 2),
           Text(
@@ -679,7 +740,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
             icon: Icons.power_settings_new,
             size: 64,
             selected: state.isOn,
-            accent: state.isOn ? _miBlue : _miOrange,
+            accent: state.isOn ? _miOrange : _miBlue,
             enabled: !busy,
             onTap: () => _setPower(state, !state.isOn),
           ),
@@ -715,6 +776,12 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 1,
+                height: 16,
+                child: ColoredBox(color: scheme.outlineVariant),
               ),
               const SizedBox(width: 10),
               Text(
@@ -754,6 +821,7 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                           widthFactor: value,
                           child: AnimatedContainer(
                             duration: _stateMotionDuration,
+                            curve: Curves.easeOutCubic,
                             decoration: BoxDecoration(
                               color: state.isOn
                                   ? _miBlue
@@ -809,6 +877,12 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 1,
+                height: 16,
+                child: ColoredBox(color: scheme.outlineVariant),
               ),
               const SizedBox(width: 10),
               Text(
@@ -1000,6 +1074,34 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   }
 }
 
+class _PressScaleFeedback extends StatefulWidget {
+  const _PressScaleFeedback({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PressScaleFeedback> createState() => _PressScaleFeedbackState();
+}
+
+class _PressScaleFeedbackState extends State<_PressScaleFeedback> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => setState(() => _pressed = true),
+      onPointerUp: (_) => setState(() => _pressed = false),
+      onPointerCancel: (_) => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.9 : 1,
+        duration: _pressMotionDuration,
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 class _CardEntrance extends StatefulWidget {
   const _CardEntrance({required this.index, required this.child});
   final int index;
@@ -1025,7 +1127,7 @@ class _CardEntranceState extends State<_CardEntrance> {
     if (MediaQuery.disableAnimationsOf(context)) return widget.child;
     final delay = widget.index * 40;
     final total = delay + 260;
-    // Submit a visible first frame before starting the staggered entrance.
+    // 先提交一个可见首帧，再开始错峰入场。
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: _started ? 1 : 0),
       duration: Duration(milliseconds: total),
@@ -1202,7 +1304,16 @@ class _SlidingOptionCellState extends State<_SlidingOptionCell> {
                   ),
                   child: widget.item.letter != null
                       ? Text(widget.item.letter!)
-                      : Icon(widget.item.icon, size: 24, color: color),
+                      : TweenAnimationBuilder<Color?>(
+                          tween: ColorTween(end: color),
+                          duration: _stateMotionDuration,
+                          curve: Curves.easeOutCubic,
+                          builder: (context, animatedColor, _) => Icon(
+                            widget.item.icon,
+                            size: 24,
+                            color: animatedColor,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -1365,6 +1476,7 @@ class _SwitchRow extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: _stateMotionDuration,
+            curve: Curves.easeOutCubic,
             width: 34,
             height: 34,
             decoration: BoxDecoration(
