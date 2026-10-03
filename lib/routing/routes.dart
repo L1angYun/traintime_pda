@@ -16,6 +16,7 @@ import 'package:watermeter/page/schoolcard/school_card_window.dart';
 import 'package:watermeter/page/schoolnet/network_card_window.dart';
 import 'package:watermeter/page/score/score_window.dart';
 import 'package:watermeter/page/setting/about_page/about_page.dart';
+import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/page/sport/sport_window.dart';
 
 class Routes {
@@ -67,28 +68,16 @@ class Routes {
   }) {
     return PageRouteBuilder<T>(
       settings: RouteSettings(name: name, arguments: arguments),
-      transitionDuration: const Duration(milliseconds: 280),
-      reverseTransitionDuration: const Duration(milliseconds: 220),
+      transitionDuration: containerTransformForwardDuration,
+      reverseTransitionDuration: containerTransformReverseDuration,
       pageBuilder: (_, _, _) => _resolve(name, arguments),
       transitionsBuilder: (_, animation, _, child) {
         final curved = CurvedAnimation(
           parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
+          curve: Curves.easeOut,
+          reverseCurve: Curves.easeIn,
         );
-        return FadeTransition(
-          opacity: curved,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.025),
-              end: Offset.zero,
-            ).animate(curved),
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.985, end: 1).animate(curved),
-              child: child,
-            ),
-          ),
-        );
+        return FadeTransition(opacity: curved, child: child);
       },
     );
   }

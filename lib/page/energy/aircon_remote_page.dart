@@ -16,6 +16,7 @@ import 'package:signals/signals_flutter.dart';
 import 'package:watermeter/controller/aircon_controller.dart';
 import 'package:watermeter/model/aircon_state.dart';
 import 'package:watermeter/page/public_widget/toast.dart';
+import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/page/setting/dialogs/aircon_imei_dialog.dart';
 import 'package:watermeter/repository/miscellaneous_session/aircon_session.dart';
 
@@ -442,64 +443,71 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
           return Stack(
             children: [
               /// 背景渐变随模式变化，AnimatedContainer 会把颜色揉过去。
-              AnimatedContainer(
-                duration: _stateMotionDuration,
-                curve: Curves.easeOutCubic,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: isDark
-                        ? [
-                            Color.lerp(gradient.first, Colors.black, 0.72)!,
-                            scheme.surface,
-                          ]
-                        : gradient,
-                    stops: const [0, 0.55],
+              Positioned.fill(
+                child: containerTransformTarget(
+                  tag: _airconTemperatureModeHeroTag,
+                  child: AnimatedContainer(
+                    duration: _stateMotionDuration,
+                    curve: Curves.easeOutCubic,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: isDark
+                            ? [
+                                Color.lerp(gradient.first, Colors.black, 0.72)!,
+                                scheme.surface,
+                              ]
+                            : gradient,
+                        stops: const [0, 0.55],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              ListView(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  MediaQuery.paddingOf(context).top + 12,
-                  16,
-                  32,
-                ),
-                children: [
-                  _hero(context, state),
-                  if (_error != null)
+              ContainerTransformPageFade(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    MediaQuery.paddingOf(context).top + 12,
+                    16,
+                    32,
+                  ),
+                  children: [
+                    _hero(context, state),
+                    if (_error != null)
+                      _CardEntrance(
+                        index: 1,
+                        child: _errorCard(context, _error!),
+                      ),
+                    const SizedBox(height: 4),
+                    _CardEntrance(index: 2, child: _energyCard(context)),
                     _CardEntrance(
-                      index: 1,
-                      child: _errorCard(context, _error!),
+                      index: 3,
+                      child: _powerCard(context, state, busy),
                     ),
-                  const SizedBox(height: 4),
-                  _CardEntrance(index: 2, child: _energyCard(context)),
-                  _CardEntrance(
-                    index: 3,
-                    child: _powerCard(context, state, busy),
-                  ),
-                  _CardEntrance(
-                    index: 4,
-                    child: _temperatureCard(context, state, busy),
-                  ),
-                  _CardEntrance(
-                    index: 5,
-                    child: _windCard(context, state, busy),
-                  ),
-                  _CardEntrance(
-                    index: 6,
-                    child: _swingCard(context, state, busy),
-                  ),
-                  _CardEntrance(
-                    index: 7,
-                    child: _otherCard(context, state, busy),
-                  ),
-                  _CardEntrance(
-                    index: 8,
-                    child: _modeCard(context, state, busy),
-                  ),
-                ],
+                    _CardEntrance(
+                      index: 4,
+                      child: _temperatureCard(context, state, busy),
+                    ),
+                    _CardEntrance(
+                      index: 5,
+                      child: _windCard(context, state, busy),
+                    ),
+                    _CardEntrance(
+                      index: 6,
+                      child: _swingCard(context, state, busy),
+                    ),
+                    _CardEntrance(
+                      index: 7,
+                      child: _otherCard(context, state, busy),
+                    ),
+                    _CardEntrance(
+                      index: 8,
+                      child: _modeCard(context, state, busy),
+                    ),
+                  ],
+                ),
               ),
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 2,
@@ -551,57 +559,54 @@ class _AirconRemotePageState extends State<AirconRemotePage> {
   Widget _hero(BuildContext context, AirconState state) {
     final textTheme = Theme.of(context).textTheme;
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Hero(
-      tag: _airconTemperatureModeHeroTag,
-      child: Material(
-        color: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 28),
-          child: Column(
-            children: [
-              if (!state.isOn)
-                Text(
-                  FlutterI18n.translate(context, "electricity.aircon_power"),
-                  style: textTheme.titleMedium?.copyWith(color: color),
-                )
-              else
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.targetTemperature.toString(),
-                      style: textTheme.displayLarge?.copyWith(
-                        fontSize: 92,
-                        height: 1,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10, left: 2),
-                      child: Text(
-                        "℃",
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 6),
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28),
+        child: Column(
+          children: [
+            if (!state.isOn)
+              Text(
+                FlutterI18n.translate(context, "electricity.aircon_power"),
+                style: textTheme.titleMedium?.copyWith(color: color),
+              )
+            else
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(_modeIcon(state.mode), size: 20, color: color),
-                  const SizedBox(width: 6),
                   Text(
-                    FlutterI18n.translate(context, state.mode.labelKey),
-                    style: textTheme.titleMedium?.copyWith(color: color),
+                    state.targetTemperature.toString(),
+                    style: textTheme.displayLarge?.copyWith(
+                      fontSize: 92,
+                      height: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, left: 2),
+                    child: Text(
+                      "℃",
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ],
-          ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(_modeIcon(state.mode), size: 20, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  FlutterI18n.translate(context, state.mode.labelKey),
+                  style: textTheme.titleMedium?.copyWith(color: color),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

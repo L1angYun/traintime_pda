@@ -8,6 +8,7 @@ import 'package:ming_cute_icons/ming_cute_icons.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:watermeter/page/homepage/home_card_padding.dart';
 import 'package:watermeter/page/public_widget/context_extension.dart';
+import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/page/public_widget/toast.dart';
 import 'package:watermeter/repository/ids_session/ids_session.dart';
 import 'package:watermeter/routing/routes.dart';
@@ -30,7 +31,7 @@ class EmptyClassroomCard extends StatelessWidget {
       }
     }
 
-    return Hero(
+    return containerTransformSource(
       tag: _emptyClassroomHeaderHeroTag,
       child:
           [
@@ -50,7 +51,8 @@ class EmptyClassroomCard extends StatelessWidget {
                 ),
               ]
               .toColumn(mainAxisAlignment: MainAxisAlignment.center)
-              .alignment(Alignment.center),
-    ).withHomeCardStyle(context, onPressed: onPressed);
+              .alignment(Alignment.center)
+              .withHomeCardStyle(context, onPressed: onPressed),
+    );
   }
 }

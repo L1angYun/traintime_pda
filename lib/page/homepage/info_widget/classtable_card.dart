@@ -14,6 +14,7 @@ import 'package:watermeter/routing/routes.dart';
 import 'package:watermeter/page/homepage/home_card_padding.dart';
 import 'package:watermeter/model/home_arrangement.dart';
 import 'package:watermeter/page/public_widget/context_extension.dart';
+import 'package:watermeter/page/public_widget/container_transform.dart';
 import 'package:watermeter/repository/preference.dart' as preference;
 import 'package:watermeter/themes/color_seed.dart';
 
@@ -64,63 +65,69 @@ class _ClassTableCardState extends State<ClassTableCard> {
 
   @override
   Widget build(BuildContext context) {
-    return SignalBuilder(
-          builder: (context) {
-            final controller = home.HomepageController.i;
-            final classTableController = ClassTableController.i;
-            final arrangementState =
-                controller.homepageArrangementStateComputedSignal.value;
-            final arrangements = controller.arrangementComputedSignal.value;
-            final isTomorrow = controller.isTomorrowComputedSignal.value;
-            final updateTime = controller.updateTimeComputedSignal.value;
-            final displayTime = isTomorrow
-                ? updateTime.add(const Duration(days: 1))
-                : updateTime;
-            final isAllSourcesLoading =
-                controller.isAllSourcesLoadingComputedSignal.value;
-            final isPartialSourcesLoading =
-                controller.isPartialSourcesLoadingComputedSignal.value;
-            final failedSources = controller.failedSourcesComputedSignal.value;
-            final havePhysicsExperiment =
-                controller.havePhysicsExperimentSignal.value;
-            final isPostGraduate = controller.isPostGraduate;
-            final currentWeek = classTableController.getCurrentWeek(
-              displayTime,
-            );
-            final semesterLength = classTableController
-                .classTableComputedSignal
-                .value
-                .semesterLength;
+    return containerTransformSource(
+      tag: _classTableHeaderHeroTag,
+      child:
+          SignalBuilder(
+                builder: (context) {
+                  final controller = home.HomepageController.i;
+                  final classTableController = ClassTableController.i;
+                  final arrangementState =
+                      controller.homepageArrangementStateComputedSignal.value;
+                  final arrangements =
+                      controller.arrangementComputedSignal.value;
+                  final isTomorrow = controller.isTomorrowComputedSignal.value;
+                  final updateTime = controller.updateTimeComputedSignal.value;
+                  final displayTime = isTomorrow
+                      ? updateTime.add(const Duration(days: 1))
+                      : updateTime;
+                  final isAllSourcesLoading =
+                      controller.isAllSourcesLoadingComputedSignal.value;
+                  final isPartialSourcesLoading =
+                      controller.isPartialSourcesLoadingComputedSignal.value;
+                  final failedSources =
+                      controller.failedSourcesComputedSignal.value;
+                  final havePhysicsExperiment =
+                      controller.havePhysicsExperimentSignal.value;
+                  final isPostGraduate = controller.isPostGraduate;
+                  final currentWeek = classTableController.getCurrentWeek(
+                    displayTime,
+                  );
+                  final semesterLength = classTableController
+                      .classTableComputedSignal
+                      .value
+                      .semesterLength;
 
-            return [
-              _StateList(
-                isAllSourcesLoading: isAllSourcesLoading,
-                isPartialSourcesLoading: isPartialSourcesLoading,
-                failedSources: failedSources,
-                havePhysicsExperiment: havePhysicsExperiment,
-                isPostGraduate: isPostGraduate,
+                  return [
+                    _StateList(
+                      isAllSourcesLoading: isAllSourcesLoading,
+                      isPartialSourcesLoading: isPartialSourcesLoading,
+                      failedSources: failedSources,
+                      havePhysicsExperiment: havePhysicsExperiment,
+                      isPostGraduate: isPostGraduate,
+                    ),
+                    _ClassArrangementListView(
+                      arrangements: arrangements,
+                      isTomorrow: isTomorrow,
+                      emptyInfoText: _getEmptyInfoText(arrangementState),
+                      arrangementState: arrangementState,
+                      displayTime: displayTime,
+                      currentWeek: currentWeek,
+                      semesterLength: semesterLength,
+                    ),
+                  ].whereType<Widget>().toList().toColumn(
+                    separator: const SizedBox(height: 10),
+                  );
+                },
+              )
+              .paddingDirectional(horizontal: 16, vertical: 8)
+              .withHomeCardStyle(
+                context,
+                onPressed: () {
+                  context.pushReplacementNamed(Routes.classTable);
+                },
               ),
-              _ClassArrangementListView(
-                arrangements: arrangements,
-                isTomorrow: isTomorrow,
-                emptyInfoText: _getEmptyInfoText(arrangementState),
-                arrangementState: arrangementState,
-                displayTime: displayTime,
-                currentWeek: currentWeek,
-                semesterLength: semesterLength,
-              ),
-            ].whereType<Widget>().toList().toColumn(
-              separator: const SizedBox(height: 10),
-            );
-          },
-        )
-        .paddingDirectional(horizontal: 16, vertical: 8)
-        .withHomeCardStyle(
-          context,
-          onPressed: () {
-            context.pushReplacementNamed(Routes.classTable);
-          },
-        );
+    );
   }
 }
 
@@ -146,103 +153,100 @@ class _ClassArrangementListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return [
-      Hero(
-        tag: _classTableHeaderHeroTag,
-        child: [
-          Icon(Icons.calendar_month, size: 32),
-          SizedBox(width: 18),
-          [
-            DefaultTextStyle(
-              style: TextStyle(
-                fontSize: 20,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              child: Builder(
-                builder: (context) {
-                  if (isTomorrow) {
-                    if (arrangements.isEmpty) {
-                      return Text(
-                        FlutterI18n.translate(
-                          context,
-                          "homepage.class_table_card.tomorrow_none",
-                        ),
-                      );
-                    }
-                    return Text(
-                      FlutterI18n.translate(
-                        context,
-                        "homepage.class_table_card.tomorrow",
-                        translationParams: {
-                          "remain": arrangements.length.toString(),
-                        },
-                      ),
-                    );
-                  }
+      [
+        Icon(Icons.calendar_month, size: 32),
+        SizedBox(width: 18),
+        [
+          DefaultTextStyle(
+            style: TextStyle(
+              fontSize: 20,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            child: Builder(
+              builder: (context) {
+                if (isTomorrow) {
                   if (arrangements.isEmpty) {
                     return Text(
                       FlutterI18n.translate(
                         context,
-                        "homepage.class_table_card.today_finished",
+                        "homepage.class_table_card.tomorrow_none",
                       ),
                     );
                   }
                   return Text(
                     FlutterI18n.translate(
                       context,
-                      "homepage.class_table_card.today",
+                      "homepage.class_table_card.tomorrow",
                       translationParams: {
                         "remain": arrangements.length.toString(),
                       },
                     ),
                   );
-                },
-              ),
-            ),
-            DefaultTextStyle(
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              child: Builder(
-                builder: (context) {
-                  String timeString = DateFormat(
-                    "MMMd",
-                    FlutterI18n.currentLocale(context).toString(),
-                  ).format(displayTime);
-
-                  String weekString = DateFormat(
-                    "E",
-                    FlutterI18n.currentLocale(context).toString(),
-                  ).format(displayTime);
-
-                  String weekInfo =
-                      currentWeek >= 0 && currentWeek < semesterLength
-                      ? FlutterI18n.translate(
-                          context,
-                          "homepage.class_table_card.week_info",
-                          translationParams: {"weekinfo": "${currentWeek + 1}"},
-                        )
-                      : FlutterI18n.translate(
-                          context,
-                          "homepage.class_table_card.on_holiday",
-                        );
-
-                  String toShow = switch (arrangementState) {
-                    home.ArrangementState.fetched =>
-                      "$timeString $weekString $weekInfo",
-                    home.ArrangementState.error => FlutterI18n.translate(
+                }
+                if (arrangements.isEmpty) {
+                  return Text(
+                    FlutterI18n.translate(
                       context,
-                      "homepage.load_error",
+                      "homepage.class_table_card.today_finished",
                     ),
-                    _ => FlutterI18n.translate(context, "homepage.loading"),
-                  };
-                  return Text(toShow);
-                },
-              ),
+                  );
+                }
+                return Text(
+                  FlutterI18n.translate(
+                    context,
+                    "homepage.class_table_card.today",
+                    translationParams: {
+                      "remain": arrangements.length.toString(),
+                    },
+                  ),
+                );
+              },
             ),
-          ].toColumn(crossAxisAlignment: CrossAxisAlignment.start),
-        ].toRow(),
-      ),
+          ),
+          DefaultTextStyle(
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            child: Builder(
+              builder: (context) {
+                String timeString = DateFormat(
+                  "MMMd",
+                  FlutterI18n.currentLocale(context).toString(),
+                ).format(displayTime);
+
+                String weekString = DateFormat(
+                  "E",
+                  FlutterI18n.currentLocale(context).toString(),
+                ).format(displayTime);
+
+                String weekInfo =
+                    currentWeek >= 0 && currentWeek < semesterLength
+                    ? FlutterI18n.translate(
+                        context,
+                        "homepage.class_table_card.week_info",
+                        translationParams: {"weekinfo": "${currentWeek + 1}"},
+                      )
+                    : FlutterI18n.translate(
+                        context,
+                        "homepage.class_table_card.on_holiday",
+                      );
+
+                String toShow = switch (arrangementState) {
+                  home.ArrangementState.fetched =>
+                    "$timeString $weekString $weekInfo",
+                  home.ArrangementState.error => FlutterI18n.translate(
+                    context,
+                    "homepage.load_error",
+                  ),
+                  _ => FlutterI18n.translate(context, "homepage.loading"),
+                };
+                return Text(toShow);
+              },
+            ),
+          ),
+        ].toColumn(crossAxisAlignment: CrossAxisAlignment.start),
+      ].toRow(),
       SizedBox(height: 8),
       if (arrangements.isEmpty)
         Text(
