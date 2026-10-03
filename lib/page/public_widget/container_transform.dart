@@ -31,38 +31,36 @@ class ContainerTransformSource {
   }
 }
 
-/// 背景模糊的省算力做法：**多级降采样缩略图叠加**（Kawase 那一类）。
+/// 背景模糊：照小米那份专利来（CN121599866A，申请日 2024-08-26）。
 ///
-/// 单张缩略图放大也能糊，但过渡生硬、容易发块；取 2~4 个尺度的缩略图叠起来，
-/// 粗的几张补上细的那张缺的柔和过渡，观感更接近高斯模糊 ——
-/// 代价依然只是每帧画几张位图，不像全屏 BackdropFilter 那样每帧重新采样背景
-/// （那个在课表这种重页面上直接掉帧）。
+/// 专利的做法是三步：把图**降采样** → 在**小图**上做高斯模糊 → 再**升采样**回原尺寸。
+/// 关键在于模糊的运算量只跟小图的像素数有关，所以极便宜；
+/// 我们这边就是：跳转前抓一张 1/8 的首页小图，转场里对小图做 ImageFilter.blur，
+/// 再交给 RawImage 放大铺满 —— 放大这一步顺带把小图的模糊一起放大，
+/// 观感就是全屏高斯模糊，而每帧只是「一张小图 + 一次小范围模糊」。
+/// （全屏 BackdropFilter 是每帧重新采样整个背景，课表那种重页面直接掉帧。）
+///
+/// 降采样比例和模糊半径是配着来的：缩得越狠，小图上的 sigma 就该越小。
 final GlobalKey containerTransformBackgroundKey = GlobalKey();
+const double containerTransformThumbScale = 0.12;
+ui.Image? _backgroundThumb;
 
-/// 从粗到细的几档采样比例，画的时候从细往粗叠。
-const List<double> containerTransformThumbScales = [0.35, 0.18, 0.09];
-final List<ui.Image?> _backgroundThumbs = List.filled(
-  containerTransformThumbScales.length,
-  null,
-);
-
-/// 跳转前调用：抓几档首页的小图。失败就静静放弃，退回纯压暗。
+/// 跳转前调用：抓一张首页的小图。失败就静静放弃，退回纯压暗。
 Future<void> captureContainerTransformBackground() async {
   final boundary =
       containerTransformBackgroundKey.currentContext?.findRenderObject();
   if (boundary is! RenderRepaintBoundary) return;
-  for (var i = 0; i < containerTransformThumbScales.length; i++) {
-    try {
-      final image = await boundary.toImage(
-        pixelRatio: containerTransformThumbScales[i],
-      );
-      _backgroundThumbs[i]?.dispose();
-      _backgroundThumbs[i] = image;
-    } catch (_) {
-      // 抓不到就算了，别把跳转搞挂。
-    }
+  try {
+    final image = await boundary.toImage(
+      pixelRatio: containerTransformThumbScale,
+    );
+    _backgroundThumb?.dispose();
+    _backgroundThumb = image;
+  } catch (_) {
+    // 抓不到就算了，别把跳转搞挂。
   }
 }
+
 /// 打开页面时下面那层（首页）缩一点、带点圆角，也就是 iOS / HyperOS 那种"下沉"。
 ///
 /// 首页在另一个 Navigator 里，路由碰不到它，所以用一个全局值让它自己动：
@@ -202,23 +200,26 @@ PageRouteBuilder<T> containerTransformRoute<T>({
                 children: [
                   // 驱动首页那层的"下沉"（首页在另一个 Navigator，只能靠全局值联动）。
                   _SinkDriver(animation: animation),
-                  // 背景：先画那张降采样缩略图（放大后自然发糊），再压一层暗。
-                  // 抓不到缩略图时就是纯压暗，不会报错。
+                  // 背景：小图 + 小图上的高斯模糊（专利那三步的后两步），
+                  // 再压一层暗。抓不到小图时就是纯压暗，不会报错。
                   Positioned.fill(
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // 从细到粗叠：细的留住一点结构，粗的把过渡糊匀。
-                        for (var i = 0; i < _backgroundThumbs.length; i++)
-                          if (_backgroundThumbs[i] != null)
-                            Opacity(
-                              opacity: i == 0 ? 1.0 : 0.55,
-                              child: RawImage(
-                                image: _backgroundThumbs[i],
-                                fit: BoxFit.cover,
-                                filterQuality: FilterQuality.low,
-                              ),
+                        if (_backgroundThumb != null)
+                          ImageFiltered(
+                            // 小图上的 sigma；因为后面要放大 8 倍左右，
+                            // 视觉上相当于全屏图上十几的 sigma。
+                            imageFilter: ui.ImageFilter.blur(
+                              sigmaX: 1.6,
+                              sigmaY: 1.6,
                             ),
+                            child: RawImage(
+                              image: _backgroundThumb,
+                              fit: BoxFit.cover,
+                              filterQuality: FilterQuality.low,
+                            ),
+                          ),
                         ColoredBox(
                           color: Colors.black.withValues(alpha: 0.16 * t),
                         ),
