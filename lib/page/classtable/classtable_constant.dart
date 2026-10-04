@@ -113,6 +113,15 @@ const double tinyClassCardWidth = 32.0;
 /// and independent of whether the week bar is docked or collapsed.
 const double classTableHeightReference = 560.0;
 
+/// The gap kept between the class-table card and the display edges.
+const double classTableSheetMargin = 8.0;
+
+/// The corner radius of the class-table card shell.
+const double classTableSheetRadius = 14.0;
+
+/// Blur sigma for the shadow outside the class-table card shell.
+const double classTableSheetShadowSigma = 8.0;
+
 /// 课表内容末尾留出的那点余地。
 ///
 /// 滚到底时最后一节的下课时间会贴到面板底边、被自己的圆角切到，留一点就够它

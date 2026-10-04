@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:intl/intl.dart';
 
-import 'package:styled_widget/styled_widget.dart';
 import 'package:watermeter/model/pda_service/custom_class.dart';
 import 'package:watermeter/page/classtable/class_add/class_add_window.dart';
 import 'package:watermeter/page/classtable/class_page/class_change_list.dart';
@@ -440,9 +439,7 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
             bottom: 0,
             duration: weekBarDockDuration,
             curve: Curves.easeOutCubic,
-            child: ClipRect(
-              child: layer,
-            ),
+            child: ClipRect(child: layer),
           ),
 
           /// 2. The ambient top-edge stretch & blur, feathering 30dp into the timetable wallpaper.
@@ -460,9 +457,7 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
                 headerHeight: tableTop,
                 featherHeight: frostedHeaderFeatherHeight,
                 sigma: GlassStyleConfig.appBarSigma,
-                tintColor: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHigh
+                tintColor: Theme.of(context).colorScheme.surfaceContainerHigh
                     .withValues(alpha: weekBarSurfaceAlpha),
                 imageFile: image,
                 imageRevision: imageRevision,
@@ -1513,13 +1508,46 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
                       loadingSources: state.loadingSources,
                       cacheSources: state.cacheSources,
                     ),
-                    ClassTableSheet(
-                      singleIndex: classTableState.chosenWeek,
-                      pageControl: pageControl,
-                      semesterLength: classTableState.semesterLength,
-                      onPageChanged: _onPageChanged,
-                      bottomClearance: _sheetBottomClearance(context),
-                    ).expanded(),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(classTableSheetMargin),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              classTableSheetRadius,
+                            ),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant
+                                  .withValues(alpha: 0.6),
+                              width: 0.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.shadow.withValues(alpha: 0.5),
+                                blurRadius: 2 * classTableSheetShadowSigma,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              classTableSheetRadius,
+                            ),
+                            child: ClassTableSheet(
+                              singleIndex: classTableState.chosenWeek,
+                              pageControl: pageControl,
+                              semesterLength: classTableState.semesterLength,
+                              onPageChanged: _onPageChanged,
+                              bottomClearance: _sheetBottomClearance(context),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
