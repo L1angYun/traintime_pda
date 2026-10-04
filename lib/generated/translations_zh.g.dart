@@ -574,6 +574,9 @@ class Translations$electricity$zh {
 	/// zh: '平台用电量'
 	String get airconAmount => '平台用电量';
 
+	/// zh: '室内温度'
+	String get airconIndoor => '室内温度';
+
 	/// zh: '更新时间'
 	String get airconUpdateTime => '更新时间';
 
@@ -1893,8 +1896,8 @@ class Translations$sponsorship$zh {
 	/// zh: '详细信息'
 	String get dialogTitle => '详细信息';
 
-	/// zh: '25级学生SixTeenForever使用AI技术将我程序移植到了鸿蒙系统，基本上就是把我程序重新编译了一遍。好像是添加了一个原生小组件，但是我没看到源代码，所以我也不清楚。如果他公开了源代码，预计接下来的维护由我接手一段时间。 注意：由于上架限制，部分功能被迫移除。 另外，本程序彩蛋是某个抱枕。 BenderBlog Rodriguez 4/10/2026'
-	String get dialogContent => '25级学生SixTeenForever使用AI技术将我程序移植到了鸿蒙系统，基本上就是把我程序重新编译了一遍。好像是添加了一个原生小组件，但是我没看到源代码，所以我也不清楚。如果他公开了源代码，预计接下来的维护由我接手一段时间。\n\n注意：由于上架限制，部分功能被迫移除。\n\n另外，本程序彩蛋是某个抱枕。\n\nBenderBlog Rodriguez 4/10/2026';
+	/// zh: '25级学生SixTeenForever使用AI技术将我程序移植到了鸿蒙系统，基本上就是使用本程序的代码，把我程序重新编译了一遍。好像是添加了一个原生小组件，但是我没看到源代码，所以我也不清楚。如果他公开了源代码，预计接下来的维护由我接手一段时间。 注意：由于上架限制，部分功能被迫移除。 另外，本程序彩蛋是某个抱枕。 BenderBlog Rodriguez 4/10/2026'
+	String get dialogContent => '25级学生SixTeenForever使用AI技术将我程序移植到了鸿蒙系统，基本上就是使用本程序的代码，把我程序重新编译了一遍。好像是添加了一个原生小组件，但是我没看到源代码，所以我也不清楚。如果他公开了源代码，预计接下来的维护由我接手一段时间。\n\n注意：由于上架限制，部分功能被迫移除。\n\n另外，本程序彩蛋是某个抱枕。\n\nBenderBlog Rodriguez 4/10/2026';
 
 	/// zh: '华为应用商店网址'
 	String get button => '华为应用商店网址';
@@ -5339,6 +5342,7 @@ extension on Translations {
 			'electricity.airconTitle' => '空调用电',
 			'electricity.airconImei' => '空调 IMEI',
 			'electricity.airconAmount' => '平台用电量',
+			'electricity.airconIndoor' => '室内温度',
 			'electricity.airconUpdateTime' => '更新时间',
 			'electricity.airconWaiting' => '等待获取空调用电信息',
 			'electricity.airconError' => '空调用电获取失败',
@@ -5538,9 +5542,9 @@ extension on Translations {
 			'homepage.libraryCard.needReturn' => ({required Object dued}) => '待归还 ${dued} 本书籍',
 			'homepage.libraryCard.noInfo' => '目前无法获取信息',
 			'homepage.libraryCard.fetchingInfo' => '正在查询信息中',
-			'homepage.schoolCardInfoCard.errorToast' => '遇到错误，请联系开发者',
 			_ => null,
 		} ?? switch (path) {
+			'homepage.schoolCardInfoCard.errorToast' => '遇到错误，请联系开发者',
 			'homepage.schoolCardInfoCard.fetchingToast' => '正在获取信息，请稍后再来看',
 			'homepage.schoolCardInfoCard.bill' => '流水',
 			'homepage.schoolCardInfoCard.balance' => ({required Object amount}) => '卡里 ${amount} 元',
@@ -6052,9 +6056,9 @@ extension on Translations {
 			'setting.changeElectricityAccount.northYard' => '北院',
 			'setting.changeElectricityAccount.southYard' => '南院',
 			'setting.changeElectricityAccount.yardQuery' => '请选择院区',
-			'setting.changeElectricityAccount.apartment' => '楼栋',
 			_ => null,
 		} ?? switch (path) {
+			'setting.changeElectricityAccount.apartment' => '楼栋',
 			'setting.changeElectricityAccount.apartmentHint' => '选择楼栋',
 			'setting.changeElectricityAccount.northApartment' => '北楼',
 			'setting.changeElectricityAccount.southApartment' => '南楼',
@@ -6224,7 +6228,7 @@ extension on Translations {
 			'setting.classSwiftExplain' => '正数错后开学日期 负数提前开学日期',
 			'sponsorship.title' => '欢迎使用 XDYou 的鸿蒙版本',
 			'sponsorship.dialogTitle' => '详细信息',
-			'sponsorship.dialogContent' => '25级学生SixTeenForever使用AI技术将我程序移植到了鸿蒙系统，基本上就是把我程序重新编译了一遍。好像是添加了一个原生小组件，但是我没看到源代码，所以我也不清楚。如果他公开了源代码，预计接下来的维护由我接手一段时间。\n\n注意：由于上架限制，部分功能被迫移除。\n\n另外，本程序彩蛋是某个抱枕。\n\nBenderBlog Rodriguez 4/10/2026',
+			'sponsorship.dialogContent' => '25级学生SixTeenForever使用AI技术将我程序移植到了鸿蒙系统，基本上就是使用本程序的代码，把我程序重新编译了一遍。好像是添加了一个原生小组件，但是我没看到源代码，所以我也不清楚。如果他公开了源代码，预计接下来的维护由我接手一段时间。\n\n注意：由于上架限制，部分功能被迫移除。\n\n另外，本程序彩蛋是某个抱枕。\n\nBenderBlog Rodriguez 4/10/2026',
 			'sponsorship.button' => '华为应用商店网址',
 			'sport.title' => '体育查询',
 			'sport.classInfo' => '课程信息',

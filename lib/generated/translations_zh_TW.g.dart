@@ -298,6 +298,7 @@ class _Translations$electricity$zh_TW extends Translations$electricity$zh {
 	@override String get airconTitle => '空調用電';
 	@override String get airconImei => '空調 IMEI';
 	@override String get airconAmount => '平臺用電量';
+	@override String get airconIndoor => '室內溫度';
 	@override String get airconUpdateTime => '更新時間';
 	@override String get airconWaiting => '等待獲取空調用電信息';
 	@override String get airconError => '空調用電獲取失敗';
@@ -2751,6 +2752,7 @@ extension on TranslationsZhTw {
 			'electricity.airconTitle' => '空調用電',
 			'electricity.airconImei' => '空調 IMEI',
 			'electricity.airconAmount' => '平臺用電量',
+			'electricity.airconIndoor' => '室內溫度',
 			'electricity.airconUpdateTime' => '更新時間',
 			'electricity.airconWaiting' => '等待獲取空調用電信息',
 			'electricity.airconError' => '空調用電獲取失敗',
@@ -2950,9 +2952,9 @@ extension on TranslationsZhTw {
 			'homepage.libraryCard.needReturn' => ({required Object dued}) => '待歸還 ${dued} 本書籍',
 			'homepage.libraryCard.noInfo' => '目前無法獲取信息',
 			'homepage.libraryCard.fetchingInfo' => '正在查詢信息中',
-			'homepage.schoolCardInfoCard.errorToast' => '遇到錯誤，請聯繫開發者',
 			_ => null,
 		} ?? switch (path) {
+			'homepage.schoolCardInfoCard.errorToast' => '遇到錯誤，請聯繫開發者',
 			'homepage.schoolCardInfoCard.fetchingToast' => '正在獲取信息，請稍後再來看',
 			'homepage.schoolCardInfoCard.bill' => '流水',
 			'homepage.schoolCardInfoCard.balance' => ({required Object amount}) => '卡里 ${amount} 元',
@@ -3464,9 +3466,9 @@ extension on TranslationsZhTw {
 			'setting.changeElectricityAccount.northYard' => '北院',
 			'setting.changeElectricityAccount.southYard' => '南院',
 			'setting.changeElectricityAccount.yardQuery' => '請選擇院區',
-			'setting.changeElectricityAccount.apartment' => '樓棟',
 			_ => null,
 		} ?? switch (path) {
+			'setting.changeElectricityAccount.apartment' => '樓棟',
 			'setting.changeElectricityAccount.apartmentHint' => '選擇樓棟',
 			'setting.changeElectricityAccount.northApartment' => '北樓',
 			'setting.changeElectricityAccount.southApartment' => '南樓',
