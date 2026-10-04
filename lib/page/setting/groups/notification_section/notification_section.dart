@@ -4,11 +4,15 @@
 
 // Course reminder notification settings page.
 
+import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 
 import 'package:watermeter/generated/translations.g.dart';
 import 'package:watermeter/page/public_widget/toast.dart';
+import 'package:watermeter/repository/notification/course_live_update_service.dart';
 import 'package:watermeter/repository/notification/course_reminder_service.dart';
+import 'package:watermeter/page/setting/groups/notification_section/notification_live_update_settings.dart';
 import 'package:watermeter/repository/translation_key.dart';
 import 'package:watermeter/page/setting/groups/notification_section/notification_function_settings.dart';
 import 'package:watermeter/page/setting/groups/notification_section/notification_permission_settings.dart';
@@ -35,6 +39,11 @@ class _NotificationSectionState extends State<NotificationSection> {
   bool _isLoading = true;
   int _pendingCount = 0;
   bool _enableExperimentNotifications = false;
+
+  // Live updates remain visible during class and have their own switch and lead.
+  bool _liveUpdateEnabled = true;
+  bool _liveUpdateSupported = false;
+  int _liveUpdateLeadMinutes = kDefaultLiveUpdateLeadMinutes;
 
   @override
   void initState() {
@@ -70,6 +79,7 @@ class _NotificationSectionState extends State<NotificationSection> {
 
       _pendingCount = await _courseReminder
           .getPendingCourseNotificationsCount();
+      await _loadLiveUpdateSettings();
     } catch (e) {
       if (mounted) {
         showToast(
@@ -82,6 +92,47 @@ class _NotificationSectionState extends State<NotificationSection> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadLiveUpdateSettings() async {
+    if (!Platform.isAndroid) return;
+    final service = CourseLiveUpdateService.instance;
+    final supported = await service.isSupported();
+    if (!supported || !mounted) return;
+
+    final diagnostics = await service.diagnostics();
+    if (!mounted) return;
+    final lead =
+        (diagnostics['leadMinutes'] as int?) ?? kDefaultLiveUpdateLeadMinutes;
+    _liveUpdateSupported = true;
+    _liveUpdateEnabled = diagnostics['enabled'] as bool? ?? true;
+    _liveUpdateLeadMinutes = kLiveUpdateLeadMinuteOptions.contains(lead)
+        ? lead
+        : kDefaultLiveUpdateLeadMinutes;
+  }
+
+  Future<void> _toggleLiveUpdate(bool value) async {
+    await _runWhileLoading(() async {
+      final service = CourseLiveUpdateService.instance;
+      await service.setEnabled(value);
+      if (value) {
+        await service.scheduleFromCourseData(daysToSchedule: _daysToSchedule);
+      } else {
+        await service.cancelAll();
+      }
+      if (mounted) setState(() => _liveUpdateEnabled = value);
+    });
+  }
+
+  Future<void> _changeLiveUpdateLead(int value) async {
+    await _runWhileLoading(() async {
+      final service = CourseLiveUpdateService.instance;
+      await service.setLeadMinutes(value);
+      if (_liveUpdateEnabled) {
+        await service.scheduleFromCourseData(daysToSchedule: _daysToSchedule);
+      }
+      if (mounted) setState(() => _liveUpdateLeadMinutes = value);
+    });
   }
 
   /// Prevent overlapping mutations and keep all settings controls locked
@@ -240,7 +291,13 @@ class _NotificationSectionState extends State<NotificationSection> {
     await _runWhileLoading(() async {
       setState(() => _daysToSchedule = value);
       await _courseReminder.setDaysToSchedule(value);
-      if (_isEnabled) await _updatePendingCountAndNotify();
+      if (_isEnabled) {
+        await _updatePendingCountAndNotify();
+      } else if (_liveUpdateSupported && _liveUpdateEnabled) {
+        await CourseLiveUpdateService.instance.scheduleFromCourseData(
+          daysToSchedule: value,
+        );
+      }
     });
   }
 
@@ -321,6 +378,14 @@ class _NotificationSectionState extends State<NotificationSection> {
           minutesBeforeOptions: kDefaultMinutesBeforeOptions,
           daysToScheduleOptions: kDefaultDaysToScheduleOptions,
         ),
+        if (_liveUpdateSupported)
+          NotificationLiveUpdateSettings(
+            isLoading: _isLoading,
+            isEnabled: _liveUpdateEnabled,
+            leadMinutes: _liveUpdateLeadMinutes,
+            onEnabledChanged: _toggleLiveUpdate,
+            onLeadMinutesChanged: _changeLiveUpdateLead,
+          ),
         NotificationPermissionSettings(
           isLoading: _isLoading,
           hasNotificationPermission: _hasNotificationPermission,
