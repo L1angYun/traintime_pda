@@ -5,6 +5,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_i18n/flutter_i18n.dart';
 import 'package:watermeter/page/classtable/class_table_view/completed_class_style.dart';
 import 'package:watermeter/page/classtable/class_table_view/current_time_indicator.dart';
+import 'package:watermeter/page/classtable/class_table_view/class_table_frame_style.dart';
+import 'package:watermeter/page/setting/groups/classtable_section/classtable_style_page/class_table_frame_style_settings.dart';
 import 'package:watermeter/page/classtable/class_table_view/glass_style.dart';
 import 'package:watermeter/page/public_widget/public_widget.dart';
 import 'package:watermeter/page/classtable/class_table_preview.dart';
@@ -33,6 +35,7 @@ class _ClassTableStylePageState extends State<ClassTableStylePage> {
     CurrentTimeIndicatorConfig.loadFromPreference();
     CompletedClassStyleConfig.loadFromPreference();
     GlassStyleConfig.loadFromPreference();
+    ClassTableFrameStyleConfig.loadFromPreference();
   }
 
   void _rebuild() {}
@@ -76,6 +79,8 @@ class _ClassTableStylePageState extends State<ClassTableStylePage> {
                         onChanged: _refreshPreview,
                         onBlurChanged: _updatePreviewBlur,
                       ),
+
+                      ClassTableFrameStyleSettings(onChanged: _refreshPreview),
 
                       /// Kept next to the wallpaper it blurs.
                       GlassStyleSettings(onChanged: _refreshPreview),

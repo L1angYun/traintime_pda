@@ -15,6 +15,7 @@ import 'package:watermeter/page/classtable/class_table_view/class_organized_data
 import 'package:watermeter/page/classtable/class_table_view/completed_class_style.dart';
 import 'package:watermeter/page/classtable/class_table_view/current_time_indicator.dart';
 import 'package:watermeter/page/classtable/class_table_view/glass_blur.dart';
+import 'package:watermeter/page/classtable/class_table_view/class_table_frame_style.dart';
 import 'package:watermeter/page/classtable/classtable_constant.dart';
 import 'package:watermeter/page/classtable/classtable_state.dart';
 import 'package:watermeter/repository/network_client.dart';
@@ -112,6 +113,7 @@ class _ClassTablePreviewState extends State<ClassTablePreview> {
     if (widget.loadStylePreferences) {
       CurrentTimeIndicatorConfig.loadFromPreference();
       CompletedClassStyleConfig.loadFromPreference();
+      ClassTableFrameStyleConfig.loadFromPreference();
     }
   }
 
@@ -173,16 +175,20 @@ class _ClassTablePreviewState extends State<ClassTablePreview> {
                     ///
                     /// Clamping rather than bouncing, as upstream had it: the sample is a pane
                     /// inside a page that already scrolls, so a pull here would fight the page.
-                    child: GlassBlurScope(
-                      enabled: false,
-                      child: ClassTableSheet(
-                        singleIndex: _previewState.currentWeek,
+                    child: applyClassTableFrame(
+                      context,
+                      GlassBlurScope(
+                        enabled: false,
+                        child: ClassTableSheet(
+                          singleIndex: _previewState.currentWeek,
 
-                        /// When the sample is not given a viewport of its own it expands to the
-                        /// table's full height and the settings page around it scrolls, so the
-                        /// last periods of the day are reachable in the sample too.
-                        enableVerticalScrolling: widget.enableVerticalScrolling,
-                        verticalPhysics: const ClampingScrollPhysics(),
+                          /// When the sample is not given a viewport of its own it expands to the
+                          /// table's full height and the settings page around it scrolls, so the
+                          /// last periods of the day are reachable in the sample too.
+                          enableVerticalScrolling:
+                              widget.enableVerticalScrolling,
+                          verticalPhysics: const ClampingScrollPhysics(),
+                        ),
                       ),
                     ),
                   ),

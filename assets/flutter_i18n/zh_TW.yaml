@@ -965,6 +965,9 @@ setting:
   class_table_style_setting: 課表顯示與樣式
   class_table_style_description: 時間指示和課程卡片樣式
   class_table_style_page:
+    frame_style: 外框樣式
+    frame_card: 卡片
+    frame_borderless: 無邊框
     current_time_settings_title: 時間指示設置
     class_color_settings_title: 課表樣式設置
     current_time_section: 時間指示設置

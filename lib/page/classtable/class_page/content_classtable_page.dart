@@ -23,6 +23,7 @@ import 'package:watermeter/page/classtable/class_table_view/current_time_indicat
 import 'package:watermeter/page/classtable/class_table_view/frosted_header_slice.dart';
 import 'package:watermeter/page/classtable/class_table_view/glass_blur.dart';
 import 'package:watermeter/page/classtable/class_table_view/glass_style.dart';
+import 'package:watermeter/page/classtable/class_table_view/class_table_frame_style.dart';
 import 'package:watermeter/page/classtable/classtable_constant.dart';
 import 'package:watermeter/page/classtable/classtable_state.dart';
 import 'package:watermeter/page/classtable/class_page/not_arranged_class_list.dart';
@@ -299,6 +300,7 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
       CurrentTimeIndicatorConfig.loadFromPreference();
       CompletedClassStyleConfig.loadFromPreference();
       GlassStyleConfig.loadFromPreference();
+      ClassTableFrameStyleConfig.loadFromPreference();
       _didLoadVisualSettings = true;
     }
 
@@ -1509,42 +1511,14 @@ class _ContentClassTablePageState extends State<ContentClassTablePage> {
                       cacheSources: state.cacheSources,
                     ),
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(classTableSheetMargin),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              classTableSheetRadius,
-                            ),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outlineVariant
-                                  .withValues(alpha: 0.6),
-                              width: 0.8,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.shadow.withValues(alpha: 0.5),
-                                blurRadius: 2 * classTableSheetShadowSigma,
-                                spreadRadius: 0,
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              classTableSheetRadius,
-                            ),
-                            child: ClassTableSheet(
-                              singleIndex: classTableState.chosenWeek,
-                              pageControl: pageControl,
-                              semesterLength: classTableState.semesterLength,
-                              onPageChanged: _onPageChanged,
-                              bottomClearance: _sheetBottomClearance(context),
-                            ),
-                          ),
+                      child: applyClassTableFrame(
+                        context,
+                        ClassTableSheet(
+                          singleIndex: classTableState.chosenWeek,
+                          pageControl: pageControl,
+                          semesterLength: classTableState.semesterLength,
+                          onPageChanged: _onPageChanged,
+                          bottomClearance: _sheetBottomClearance(context),
                         ),
                       ),
                     ),

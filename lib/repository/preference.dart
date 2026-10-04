@@ -160,6 +160,10 @@ enum Preference {
     key: "classStyleCompletedInnerAlpha",
     type: "double",
   ), // 已完成课程底色透明度
+  classTableFrameStyle(
+    key: "classTableFrameStyle",
+    type: "String",
+  ), // 课表外框样式；未设置时为无边框
   classStyleGlassEnabled(
     key: "classStyleGlassEnabled",
     type: "bool",
