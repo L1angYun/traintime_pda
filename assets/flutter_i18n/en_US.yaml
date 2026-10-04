@@ -1056,7 +1056,7 @@ setting:
   background_blur_off: Off
   choose_background: Choose background image
   class_table_style_setting: Class schedule display & style
-  class_table_style_description: Time indicator and course card style
+  class_table_style_description: Frame, background, time indicator and course card style
   class_table_style_page:
     frame_style: Frame style
     frame_card: Card

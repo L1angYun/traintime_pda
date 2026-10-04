@@ -963,7 +963,7 @@ setting:
   background_blur_off: 關閉
   choose_background: 課表背景圖選擇
   class_table_style_setting: 課表顯示與樣式
-  class_table_style_description: 時間指示和課程卡片樣式
+  class_table_style_description: 外框、背景、時間指示和課程卡片樣式
   class_table_style_page:
     frame_style: 外框樣式
     frame_card: 卡片

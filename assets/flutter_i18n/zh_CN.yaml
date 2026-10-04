@@ -965,7 +965,7 @@ setting:
   background_blur_off: 关闭
   choose_background: 课表背景图选择
   class_table_style_setting: 课表显示与样式
-  class_table_style_description: 时间指示和课程卡片样式
+  class_table_style_description: 外框、背景、时间指示和课程卡片样式
   class_table_style_page:
     frame_style: 外框样式
     frame_card: 卡片

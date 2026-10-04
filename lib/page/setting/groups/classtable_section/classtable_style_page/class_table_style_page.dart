@@ -75,12 +75,11 @@ class _ClassTableStylePageState extends State<ClassTableStylePage> {
                   constraints: const BoxConstraints(maxWidth: sheetMaxWidth),
                   child: Column(
                     children: [
+                      ClassTableFrameStyleSettings(onChanged: _refreshPreview),
                       ClassTableBackgroundSettings(
                         onChanged: _refreshPreview,
                         onBlurChanged: _updatePreviewBlur,
                       ),
-
-                      ClassTableFrameStyleSettings(onChanged: _refreshPreview),
 
                       /// Kept next to the wallpaper it blurs.
                       GlassStyleSettings(onChanged: _refreshPreview),
